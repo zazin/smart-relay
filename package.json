@@ -1,0 +1,16 @@
+{
+  "name": "smart-relay",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": {
+    "name": "Nur Zazin",
+    "email": "nurza.cool@gmail.com"
+  },
+  "license": "ISC",
+  "description": ""
+}

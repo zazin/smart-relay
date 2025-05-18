@@ -8,9 +8,12 @@
     "prepublishOnly": "npm test"
   },
   "keywords": [
-    "smart relay",
-    "forward host",
-    "proxy server"
+    "smart",
+    "relay",
+    "forward",
+    "host",
+    "proxy",
+    "server"
   ],
   "author": {
     "name": "Nur Zazin",
@@ -23,7 +26,7 @@
     "supertest": "^6.3.3"
   },
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=20"
   },
   "repository": {
     "type": "git",

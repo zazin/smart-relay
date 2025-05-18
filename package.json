@@ -2,6 +2,9 @@
   "name": "smart-relay",
   "version": "1.0.0",
   "main": "src/index.js",
+  "bin": {
+    "smart-relay": "./index.js"
+  },
   "scripts": {
     "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 node index.js",
     "test": "jest",

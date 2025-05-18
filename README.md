@@ -3,7 +3,38 @@
 A simple HTTP proxy server that forwards requests to a destination specified in the 'x-destination-url' header. It
 supports both HTTP and HTTPS protocols.
 
-## Project Structure
+## Installation
+
+## Usage
+
+### As a standalone server
+
+1. Start the server:
+   ```bash
+   npx smart-relay
+   ```
+
+2. The server will listen on port `8080` by default.
+
+3. To use the proxy, make HTTP requests to the server with the `x-destination-url` header set to the target URL.
+
+   Example using curl:
+   ```bash
+   curl -H "x-destination-url: https://example.com" http://localhost:8080/path
+   ```
+
+## Error Handling
+
+The server handles various error scenarios:
+
+| Error scenario                 | Error code |
+|--------------------------------|------------|
+| Missing destination URL header | 001        |
+| Proxy request failures         | 002        |
+
+## Development
+
+### Project Structure
 
 The project has been modularized for better maintainability:
 
@@ -15,46 +46,6 @@ The project has been modularized for better maintainability:
 - `src/request-handlers.js` - Request handling and routing
 - `tests/` - Test files for the application
 
-## Installation
-
-```bash
-npm install smart-relay
-```
-
-## Usage
-
-### As a standalone server
-
-1. Start the server:
-   ```bash
-   npm start
-   ```
-
-2. The server will listen on port 8080 by default.
-
-3. To use the proxy, make HTTP requests to the server with the `x-destination-url` header set to the target URL.
-
-   Example using curl:
-   ```bash
-   curl -H "x-destination-url: https://example.com" http://localhost:8080/path
-   ```
-
-### As a library
-
-```javascript
-const proxy = require('smart-relay');
-// The server is automatically started when the module is required
-```
-
-## Error Handling
-
-The server handles various error scenarios:
-
-- Missing destination URL header (Error code: 001)
-- Proxy request failures (Error code: 002)
-
-## Development
-
 ### Testing
 
 Run the tests with:
@@ -65,7 +56,8 @@ npm test
 
 ### Publishing
 
-This package uses GitHub Actions for automated deployment to npm. When a new release is created on GitHub, the package will be automatically tested and published to npm.
+This package uses GitHub Actions for automated deployment to npm. When a new release is created on GitHub, the package
+will be automatically tested and published to npm.
 
 To create a new release:
 

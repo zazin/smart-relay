@@ -1,63 +1,159 @@
+/**
+ * HTTP Proxy Server
+ * 
+ * This module implements a simple HTTP proxy server that forwards requests to a destination
+ * specified in the 'x-destination-url' header. It supports both HTTP and HTTPS protocols.
+ * 
+ * @module smart-relay
+ * @author Nur Zazin
+ */
+
 const http = require('http');
 const https = require('https');
 const url = require('url');
 
-// Create the proxy server
-const server = http.createServer((req, res) => {
-    const destinationUrl = req.headers['x-destination-url'];
+// Configuration constants
+const PORT = 8080;
+const CONTENT_TYPE_TEXT = 'text/plain';
 
-    if (!destinationUrl) {
-        // Log requests with missing X-Destination-URL header
-        console.log(`400 | (Missing X-Destination-URL header) | ${req.method} | /`);
+/**
+ * Handles requests with missing destination URL header
+ * 
+ * @param {http.IncomingMessage} req - The client request object
+ * @param {http.ServerResponse} res - The server response object
+ * @returns {void}
+ */
+function handleMissingDestination(req, res) {
+    console.log(`400 | (Missing X-Destination-URL header) | ${req.method} | /`);
+    res.writeHead(400, { 'Content-Type': CONTENT_TYPE_TEXT });
+    res.end('X-Destination-URL header is required.');
+}
 
-        res.writeHead(400, { 'Content-Type': 'text/plain' });
-        return res.end('X-Destination-URL header is required.');
-    }
-
-    // Parse the destination URL
-    const parsedDestinationUrl = url.parse(destinationUrl);
-
-    // Determine the protocol
-    const protocol = parsedDestinationUrl.protocol === 'https:' ? https : http;
-
-    // Append the original request path to the destination URL's path
+/**
+ * Creates request options for the destination server
+ * 
+ * @param {Object} parsedUrl - The parsed destination URL
+ * @param {http|https} protocol - The protocol module to use
+ * @param {http.IncomingMessage} req - The original client request
+ * @returns {Object} Options for the proxy request
+ */
+function createRequestOptions(parsedUrl, protocol, req) {
     const options = {
-        hostname: parsedDestinationUrl.hostname,
-        port: parsedDestinationUrl.port || (protocol === https ? 443 : 80),
-        path: url.resolve(parsedDestinationUrl.path, req.url), // Combine the destination path with the incoming request path
+        hostname: parsedUrl.hostname,
+        port: parsedUrl.port || (protocol === https ? 443 : 80),
+        path: url.resolve(parsedUrl.path, req.url),
         method: req.method,
         headers: {
             ...req.headers,
-            'Host': parsedDestinationUrl.hostname // Override the Host header
+            'Host': parsedUrl.hostname // Override the Host header
         }
     };
 
-    // Remove the proxy-specific headers
+    // Remove proxy-specific headers
     delete options.headers['x-destination-url'];
+
+    return options;
+}
+
+/**
+ * Builds a full URL string from components
+ * 
+ * @param {Object} parsedUrl - The parsed URL object
+ * @param {string} path - The request path
+ * @returns {string} The complete URL
+ */
+function buildFullUrl(parsedUrl, path) {
+    return `${parsedUrl.protocol}//${parsedUrl.hostname}${path}`;
+}
+
+/**
+ * Handles successful proxy responses
+ * 
+ * @param {http.IncomingMessage} proxyRes - The proxy response
+ * @param {http.ServerResponse} clientRes - The client response
+ * @param {Object} parsedUrl - The parsed destination URL
+ * @param {Object} options - The request options
+ * @param {http.IncomingMessage} clientReq - The original client request
+ * @returns {void}
+ */
+function handleProxyResponse(proxyRes, clientRes, parsedUrl, options, clientReq) {
+    const fullUrl = buildFullUrl(parsedUrl, options.path);
+    console.log(`${proxyRes.statusCode} | OK | ${clientReq.method} | ${fullUrl}`);
+
+    clientRes.writeHead(proxyRes.statusCode, proxyRes.headers);
+    proxyRes.pipe(clientRes, { end: true });
+}
+
+/**
+ * Handles proxy request errors
+ * 
+ * @param {Error} err - The error object
+ * @param {http.ServerResponse} clientRes - The client response
+ * @param {Object} parsedUrl - The parsed destination URL
+ * @param {Object} options - The request options
+ * @param {http.IncomingMessage} clientReq - The original client request
+ * @returns {void}
+ */
+function handleProxyError(err, clientRes, parsedUrl, options, clientReq) {
+    const fullUrl = buildFullUrl(parsedUrl, options.path);
+    console.log(`500 (Error: ${err.message}) | ${clientReq.method} | ${fullUrl}`);
+
+    clientRes.writeHead(500, { 'Content-Type': CONTENT_TYPE_TEXT });
+    clientRes.end(`Proxy request failed: ${err.message}`);
+}
+
+/**
+ * Forwards the client request to the destination server
+ * 
+ * @param {http.IncomingMessage} clientReq - The client request object
+ * @param {http.ServerResponse} clientRes - The server response object
+ * @param {string} destinationUrl - The URL to forward the request to
+ * @returns {void}
+ */
+function forwardRequest(clientReq, clientRes, destinationUrl) {
+    // Parse the destination URL
+    const parsedUrl = url.parse(destinationUrl);
+
+    // Determine the protocol to use
+    const protocol = parsedUrl.protocol === 'https:' ? https : http;
+
+    // Create options for the proxy request
+    const options = createRequestOptions(parsedUrl, protocol, clientReq);
 
     // Forward the request to the destination server
     const proxyReq = protocol.request(options, (proxyRes) => {
-        // Log request details: method, full URL, status code
-        const fullUrl = `${parsedDestinationUrl.protocol}//${parsedDestinationUrl.hostname}${options.path}`;
-        console.log(`${proxyRes.statusCode} | OK | ${req.method} | ${fullUrl}`);
-
-        res.writeHead(proxyRes.statusCode, proxyRes.headers);
-        proxyRes.pipe(res, { end: true });
+        handleProxyResponse(proxyRes, clientRes, parsedUrl, options, clientReq);
     });
 
+    // Handle proxy request errors
     proxyReq.on('error', (err) => {
-        // Log error requests with 500 status codes
-        const fullUrl = `${parsedDestinationUrl.protocol}//${parsedDestinationUrl.hostname}${options.path}`;
-        console.log(`500 (Error: ${err.message}) | ${req.method} | ${fullUrl}`);
-
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end(`Proxy request failed: ${err.message}`);
+        handleProxyError(err, clientRes, parsedUrl, options, clientReq);
     });
 
-    req.pipe(proxyReq, { end: true });
-});
+    // Pipe the client request to the proxy request
+    clientReq.pipe(proxyReq, { end: true });
+}
 
-const PORT = 8080;
+/**
+ * Main request handler for the proxy server
+ * 
+ * @param {http.IncomingMessage} req - The client request object
+ * @param {http.ServerResponse} res - The server response object
+ * @returns {void}
+ */
+function handleRequest(req, res) {
+    const destinationUrl = req.headers['x-destination-url'];
+
+    if (!destinationUrl) {
+        return handleMissingDestination(req, res);
+    }
+
+    forwardRequest(req, res, destinationUrl);
+}
+
+// Create and start the proxy server
+const server = http.createServer(handleRequest);
+
 server.listen(PORT, () => {
     console.log(`Proxy server is running on port ${PORT}`);
 });

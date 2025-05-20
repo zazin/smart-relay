@@ -28,6 +28,7 @@ const DEFAULT_CLOUDFLARE_HOSTNAME = '';
 // Callback configuration defaults
 const DEFAULT_CALLBACK_URL = '';
 const DEFAULT_CALLBACK_AUTH_HEADER = '';
+const DEFAULT_CALLBACK_INTERVAL = 10000; // 10 seconds in milliseconds
 
 // Content type constants
 const CONTENT_TYPE_JSON = 'application/json';
@@ -51,7 +52,8 @@ const defaultConfig = {
     CLOUDFLARE_TOKEN: DEFAULT_CLOUDFLARE_TOKEN,
     CLOUDFLARE_HOSTNAME: DEFAULT_CLOUDFLARE_HOSTNAME,
     CALLBACK_URL: DEFAULT_CALLBACK_URL,
-    CALLBACK_AUTH_HEADER: DEFAULT_CALLBACK_AUTH_HEADER
+    CALLBACK_AUTH_HEADER: DEFAULT_CALLBACK_AUTH_HEADER,
+    CALLBACK_INTERVAL: DEFAULT_CALLBACK_INTERVAL
 };
 
 // Read or create a config file
@@ -107,6 +109,7 @@ async function getConfig() {
     // Determine callback settings from config file, environment variables, or defaults
     const CALLBACK_URL = process.env.CALLBACK_URL || configData.CALLBACK_URL || DEFAULT_CALLBACK_URL;
     const CALLBACK_AUTH_HEADER = process.env.CALLBACK_AUTH_HEADER || configData.CALLBACK_AUTH_HEADER || DEFAULT_CALLBACK_AUTH_HEADER;
+    const CALLBACK_INTERVAL = parseInt(process.env.CALLBACK_INTERVAL) || configData.CALLBACK_INTERVAL || DEFAULT_CALLBACK_INTERVAL;
 
     return {
         PORT,
@@ -118,7 +121,8 @@ async function getConfig() {
         CLOUDFLARE_TOKEN,
         CLOUDFLARE_HOSTNAME,
         CALLBACK_URL,
-        CALLBACK_AUTH_HEADER
+        CALLBACK_AUTH_HEADER,
+        CALLBACK_INTERVAL
     };
 }
 

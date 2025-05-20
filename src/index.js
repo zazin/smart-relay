@@ -17,9 +17,6 @@ const cloudflared = require('cloudflared');
 const {handleRequest} = require('./request-handlers');
 const getConfig = require('./config');
 
-// Flag to track if callback has been sent
-let callbackSent = false;
-
 /**
  * Send the tunnel URL to the callback URL
  *
@@ -28,8 +25,8 @@ let callbackSent = false;
  * @returns {Promise<void>}
  */
 async function sendCallback(tunnelUrl, config) {
-    // Skip if the callback URL is not configured or the callback was already sent
-    if (!config.CALLBACK_URL || callbackSent) {
+    // Skip if the callback URL is not configured
+    if (!config.CALLBACK_URL) {
         return;
     }
 
@@ -67,7 +64,6 @@ async function sendCallback(tunnelUrl, config) {
                 res.on('end', () => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
                         console.log(`Successfully sent tunnel URL to callback: ${config.CALLBACK_URL}`);
-                        callbackSent = true;
                         resolve();
                     } else {
                         console.error(`Failed to send tunnel URL to callback. Status: ${res.statusCode}, Response: ${responseData}`);
@@ -129,8 +125,23 @@ async function startServer() {
                     console.log(`Ngrok tunnel is running at: ${url}`);
                     console.log(`You can access your proxy server from the internet using the above URL.`);
 
-                    // Send callback with the tunnel URL
+                    // Send callback with the tunnel URL initially
                     await sendCallback(url, config);
+
+                    // Set up periodic callback to ensure tunnel is online
+                    if (config.CALLBACK_URL && config.CALLBACK_INTERVAL > 0) {
+                        console.log(`Setting up periodic callback every ${config.CALLBACK_INTERVAL / 1000} seconds`);
+                        const intervalId = setInterval(() => {
+                            sendCallback(url, config).catch(error => {
+                                console.error(`Error in periodic callback: ${error.message}`);
+                            });
+                        }, config.CALLBACK_INTERVAL);
+
+                        // Clear interval when process exits
+                        process.on('SIGINT', () => {
+                            clearInterval(intervalId);
+                        });
+                    }
                 } catch (error) {
                     console.error(`Failed to start ngrok tunnel: ${error.message}`);
                 }
@@ -157,8 +168,23 @@ async function startServer() {
                     console.log(`Cloudflare tunnel is running at: ${tunnel.url}`);
                     console.log(`You can access your proxy server from the internet using the above URL.`);
 
-                    // Send callback with the tunnel URL
+                    // Send callback with the tunnel URL initially
                     await sendCallback(tunnel.url, config);
+
+                    // Set up periodic callback to ensure tunnel is online
+                    if (config.CALLBACK_URL && config.CALLBACK_INTERVAL > 0) {
+                        console.log(`Setting up periodic callback every ${config.CALLBACK_INTERVAL / 1000} seconds`);
+                        const intervalId = setInterval(() => {
+                            sendCallback(tunnel.url, config).catch(error => {
+                                console.error(`Error in periodic callback: ${error.message}`);
+                            });
+                        }, config.CALLBACK_INTERVAL);
+
+                        // Clear interval when tunnel is closed
+                        process.on('SIGINT', () => {
+                            clearInterval(intervalId);
+                        });
+                    }
 
                     // Handle tunnel closure
                     process.on('SIGINT', async () => {

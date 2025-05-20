@@ -85,13 +85,14 @@ callback URL. This is useful for integrating with other systems that need to kno
      "PORT": 8080,
      "NGROK_ENABLED": true,
      "CALLBACK_URL": "https://your-api.example.com/webhook",
-     "CALLBACK_AUTH_HEADER": "Bearer your-auth-token"
+     "CALLBACK_AUTH_HEADER": "Bearer your-auth-token",
+     "CALLBACK_INTERVAL": 10000
    }
    ```
 
 2. Or use environment variables:
    ```bash
-   NGROK_ENABLED=true CALLBACK_URL=https://your-api.example.com/webhook CALLBACK_AUTH_HEADER="Bearer your-auth-token" npx smart-relay
+   NGROK_ENABLED=true CALLBACK_URL=https://your-api.example.com/webhook CALLBACK_AUTH_HEADER="Bearer your-auth-token" CALLBACK_INTERVAL=10000 npx smart-relay
    ```
 
 3. When a tunnel is established (either ngrok or Cloudflare), the server will send a POST request to the callback URL
@@ -102,8 +103,11 @@ callback URL. This is useful for integrating with other systems that need to kno
    }
    ```
 
-Note: The callback is only sent once when the tunnel is first established, not on every request. This feature is
-designed to notify an external service about the public tunnel URL.
+4. The server will continue to send this request periodically (every 10 seconds by default) to ensure the tunnel is online.
+   You can customize the interval by setting the `CALLBACK_INTERVAL` parameter (in milliseconds).
+
+Note: This feature is designed to notify an external service about the public tunnel URL and to keep the tunnel active
+by making regular calls to the external API.
 
 ## Error Handling
 

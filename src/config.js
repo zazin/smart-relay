@@ -15,6 +15,11 @@ const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 // Default configuration
 const DEFAULT_PORT = 8080;
 
+// Ngrok configuration defaults
+const DEFAULT_NGROK_ENABLED = false;
+const DEFAULT_NGROK_AUTHTOKEN = '';
+const DEFAULT_NGROK_REGION = 'us';
+
 // Content type constants
 const CONTENT_TYPE_JSON = 'application/json';
 
@@ -28,7 +33,12 @@ if (!fs.existsSync(CONFIG_DIR)) {
 }
 
 // Read or create a config file
-let configData = {PORT: DEFAULT_PORT};
+let configData = {
+    PORT: DEFAULT_PORT,
+    NGROK_ENABLED: DEFAULT_NGROK_ENABLED,
+    NGROK_AUTHTOKEN: DEFAULT_NGROK_AUTHTOKEN,
+    NGROK_REGION: DEFAULT_NGROK_REGION
+};
 if (!fs.existsSync(CONFIG_FILE)) {
     try {
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(configData, null, 2));
@@ -48,7 +58,15 @@ if (!fs.existsSync(CONFIG_FILE)) {
 // Determine PORT value from config file, environment variable, or default
 const PORT = process.env.PORT || configData.PORT || DEFAULT_PORT;
 
+// Determine ngrok settings from config file, environment variables, or defaults
+const NGROK_ENABLED = process.env.NGROK_ENABLED === 'true' || configData.NGROK_ENABLED || DEFAULT_NGROK_ENABLED;
+const NGROK_AUTHTOKEN = process.env.NGROK_AUTHTOKEN || configData.NGROK_AUTHTOKEN || DEFAULT_NGROK_AUTHTOKEN;
+const NGROK_REGION = process.env.NGROK_REGION || configData.NGROK_REGION || DEFAULT_NGROK_REGION;
+
 module.exports = {
     PORT,
-    CONTENT_TYPE_JSON
+    CONTENT_TYPE_JSON,
+    NGROK_ENABLED,
+    NGROK_AUTHTOKEN,
+    NGROK_REGION
 };

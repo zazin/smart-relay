@@ -23,6 +23,29 @@ supports both HTTP and HTTPS protocols.
    curl -H "x-destination-url: https://example.com" http://localhost:8080/path
    ```
 
+### Using Ngrok for Public Access
+
+The server can automatically create an ngrok tunnel to expose your local server to the internet.
+
+1. Enable ngrok in the configuration file at `~/.smart-relay/config.json`:
+   ```json
+   {
+     "PORT": 8080,
+     "NGROK_ENABLED": true,
+     "NGROK_AUTHTOKEN": "your-ngrok-authtoken",
+     "NGROK_REGION": "us"
+   }
+   ```
+
+2. Or use environment variables:
+   ```bash
+   NGROK_ENABLED=true NGROK_AUTHTOKEN=your-ngrok-authtoken npx smart-relay
+   ```
+
+3. When the server starts with ngrok enabled, it will display the public URL that can be used to access your proxy server from anywhere.
+
+Note: While an authtoken is not strictly required, ngrok has limitations for unauthenticated tunnels. Get your free authtoken by signing up at [ngrok.com](https://ngrok.com/).
+
 ## Error Handling
 
 The server handles various error scenarios:
@@ -39,12 +62,14 @@ The server handles various error scenarios:
 The project has been modularized for better maintainability:
 
 - `index.js` - Main entry point that sets up and starts the server
-- `src/config.js` - Configuration settings for the server
+- `src/config.js` - Configuration settings for the server, including ngrok options
 - `src/utils.js` - Utility functions used across the application
 - `src/error-handlers.js` - Functions for handling error scenarios
 - `src/proxy.js` - Core proxy functionality for forwarding requests
 - `src/request-handlers.js` - Request handling and routing
 - `tests/` - Test files for the application
+
+The server now includes ngrok integration for exposing your local server to the internet, making it easier to test webhooks and share your proxy with others.
 
 ### Testing
 

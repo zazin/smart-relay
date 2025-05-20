@@ -24,6 +24,9 @@
   },
   "license": "ISC",
   "description": "A simple HTTP proxy server that forwards requests to a destination specified in the 'x-destination-url' header",
+  "dependencies": {
+    "ngrok": "^5.0.0-beta.2"
+  },
   "devDependencies": {
     "jest": "^29.5.0",
     "supertest": "^6.3.3"

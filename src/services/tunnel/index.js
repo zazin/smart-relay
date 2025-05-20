@@ -5,7 +5,7 @@
  */
 
 const { startNgrokTunnel } = require('./ngrok');
-const { startCloudflaredTunnel } = require('./cloudflare');
+const { startCloudflaredTunnel } = require('./cloudflare/index');
 
 /**
  * Start a tunnel based on the configuration

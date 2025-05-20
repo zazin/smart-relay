@@ -42,14 +42,14 @@ async function askYesNo(rl, question) {
     const answer = await new Promise(resolve => {
       rl.question(`${question} (y/n): `, resolve);
     });
-    
+
     const normalized = answer.trim().toLowerCase();
     if (normalized === 'y' || normalized === 'yes') {
       return true;
     } else if (normalized === 'n' || normalized === 'no') {
       return false;
     }
-    
+
     console.log('Please enter "y" or "n".');
   }
 }
@@ -66,16 +66,16 @@ async function askNumber(rl, question, defaultValue) {
     const answer = await new Promise(resolve => {
       rl.question(`${question} [${defaultValue}]: `, resolve);
     });
-    
+
     if (answer.trim() === '') {
       return defaultValue;
     }
-    
+
     const num = Number(answer);
     if (!isNaN(num)) {
       return num;
     }
-    
+
     console.log('Please enter a valid number.');
   }
 }
@@ -91,11 +91,11 @@ async function askUrl(rl, question) {
     const answer = await new Promise(resolve => {
       rl.question(`${question}: `, resolve);
     });
-    
+
     if (answer.trim() === '') {
       return '';
     }
-    
+
     // Simple URL validation
     try {
       new URL(answer);
@@ -118,7 +118,7 @@ async function askText(rl, question, defaultValue = '') {
   const answer = await new Promise(resolve => {
     rl.question(`${question}${defaultPrompt}: `, resolve);
   });
-  
+
   return answer.trim() === '' ? defaultValue : answer;
 }
 
@@ -133,19 +133,17 @@ async function askTunnelConfig(rl) {
     NGROK_TOKEN: '',
     NGROK_REGION: 'us',
     CLOUDFLARE_ENABLED: false,
-    CLOUDFLARE_TOKEN: '',
-    CLOUDFLARE_HOSTNAME: '',
     CALLBACK_URL: '',
     CALLBACK_AUTH_HEADER: ''
   };
-  
+
   const enableTunnel = await askYesNo(rl, 'Do you want to enable tunnel?');
-  
+
   if (enableTunnel) {
     console.log('\nChoose tunnel type:');
     console.log('1. Ngrok');
     console.log('2. Cloudflare');
-    
+
     let tunnelChoice;
     while (true) {
       const answer = await askText(rl, 'Enter your choice (1 or 2)');
@@ -155,7 +153,7 @@ async function askTunnelConfig(rl) {
       }
       console.log('Please enter 1 or 2.');
     }
-    
+
     if (tunnelChoice === '1') {
       // Ngrok configuration
       config.NGROK_ENABLED = true;
@@ -164,28 +162,20 @@ async function askTunnelConfig(rl) {
     } else {
       // Cloudflare configuration
       config.CLOUDFLARE_ENABLED = true;
-      config.CLOUDFLARE_TOKEN = await askText(rl, 'Enter your Cloudflare token (required)');
-      
-      while (!config.CLOUDFLARE_TOKEN) {
-        console.log('Cloudflare token is required for creating a tunnel.');
-        config.CLOUDFLARE_TOKEN = await askText(rl, 'Enter your Cloudflare token (required)');
-      }
-      
-      config.CLOUDFLARE_HOSTNAME = await askText(rl, 'Enter your Cloudflare hostname (e.g., your-hostname.example.com)');
     }
-    
+
     // Callback URL configuration
     const enableCallback = await askYesNo(rl, 'Do you want to set callback URL?');
     if (enableCallback) {
       config.CALLBACK_URL = await askUrl(rl, 'Enter callback URL (e.g., https://your-api.example.com/webhook)');
-      
+
       const enableAuthHeader = await askYesNo(rl, 'Do you want to set header auth on callback URL?');
       if (enableAuthHeader) {
         config.CALLBACK_AUTH_HEADER = await askText(rl, 'Enter auth header (e.g., Bearer your-token)');
       }
     }
   }
-  
+
   return config;
 }
 
@@ -196,31 +186,31 @@ async function askTunnelConfig(rl) {
 async function runSetup() {
   console.log('Welcome to Smart Relay setup!');
   console.log('This will help you configure the proxy server for first-time use.\n');
-  
+
   const rl = createInterface();
-  
+
   try {
     // Ask for port
     const port = await askNumber(rl, 'Enter the port number for the proxy server', DEFAULT_PORT);
-    
+
     // Ask for tunnel configuration
     const tunnelConfig = await askTunnelConfig(rl);
-    
+
     // Combine configurations
     const config = {
       PORT: port,
       ...tunnelConfig
     };
-    
+
     // Ensure the config directory exists
     if (!fs.existsSync(CONFIG_DIR)) {
       fs.mkdirSync(CONFIG_DIR, { recursive: true });
     }
-    
+
     // Write the config file
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2));
     console.log(`\nConfiguration saved to ${CONFIG_FILE}`);
-    
+
     return config;
   } finally {
     rl.close();

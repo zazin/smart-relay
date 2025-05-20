@@ -236,17 +236,26 @@ async function startServer() {
                         return;
                     }
 
-                    // Check if a token is provided
-                    if (!config.CLOUDFLARE_TOKEN) {
-                        console.error('Cloudflare token is required for creating a tunnel.');
-                        return;
-                    }
+                    // No need for a tunnelOptions object anymore as we're using command line arguments directly
 
-                    // No need for tunnelOptions object anymore as we're using command line arguments directly
+                    // Check if the tunnel already exists, create it if it doesn't
+                    try {
+                        const {execSync} = require('child_process');
 
-                    // Validate Cloudflare token
-                    if (!config.CLOUDFLARE_TOKEN || config.CLOUDFLARE_TOKEN.trim() === '') {
-                        console.error('Cloudflare token is empty or invalid. Please check your configuration.');
+                        // Check if the tunnel exists by listing tunnels and searching for "smart-relay"
+                        console.log('Checking if Cloudflare tunnel "smart-relay" exists...');
+                        const tunnelListOutput = execSync('cloudflared tunnel list', {encoding: 'utf8'});
+
+                        // If the tunnel doesn't exist in the list, create it
+                        if (!tunnelListOutput.includes('smart-relay')) {
+                            console.log('Cloudflare tunnel "smart-relay" does not exist. Creating it...');
+                            execSync('cloudflared tunnel create smart-relay', {stdio: 'inherit'});
+                            console.log('Cloudflare tunnel "smart-relay" created successfully.');
+                        } else {
+                            console.log('Cloudflare tunnel "smart-relay" already exists. Skipping creation.');
+                        }
+                    } catch (error) {
+                        console.error(`Error checking or creating Cloudflare tunnel: ${error.message}`);
                         return;
                     }
 
@@ -258,15 +267,11 @@ async function startServer() {
                             // Get the tunnel URL when it's available
                             return await new Promise((resolve, reject) => {
                                 // Prepare command line arguments for cloudflared
-                                const args = ['tunnel', 'run', 'smart-relay'];
+                                const args = ['tunnel', 'run'];
 
                                 // Add URL argument
                                 args.push('--url', `http://localhost:${config.PORT}`);
-
-                                // Add a hostname if configured
-                                if (config.CLOUDFLARE_HOSTNAME) {
-                                    args.push('--hostname', config.CLOUDFLARE_HOSTNAME);
-                                }
+                                args.push('smart-relay');
 
                                 console.log(`Executing: cloudflared ${args.join(' ')}`);
 
@@ -282,7 +287,7 @@ async function startServer() {
                                     console.error('Cloudflare tunnel connection timed out');
                                     tunnelProcess.kill();
                                     reject(new Error('Cloudflare tunnel connection timed out after 30 seconds'));
-                                }, 30000); // 30 second timeout
+                                }, 30000); // 30-second timeout
 
                                 // Process stdout to extract tunnel URL
                                 tunnelProcess.stdout.on('data', (data) => {

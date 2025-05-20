@@ -60,26 +60,25 @@ The server can also create a Cloudflare tunnel to expose your local server to th
 - You must have the `cloudflared` CLI tool installed on your system. You can download it from the [Cloudflare website](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
 - The `cloudflared` command must be available in your system's PATH.
 
+**Note:** The server will automatically check if a tunnel named "smart-relay" exists. If it doesn't exist, it will create it (this is a one-time operation). If the tunnel already exists, it will skip the creation step and directly run the tunnel.
+
 1. Enable Cloudflare tunnel in the configuration file at `~/.smart-relay/config.json`:
    ```json
    {
      "PORT": 8080,
-     "CLOUDFLARE_ENABLED": true,
-     "CLOUDFLARE_TOKEN": "your-cloudflare-token",
-     "CLOUDFLARE_HOSTNAME": "your-hostname.example.com"
+     "CLOUDFLARE_ENABLED": true
    }
    ```
 
 2. Or use environment variables:
    ```bash
-   CLOUDFLARE_ENABLED=true CLOUDFLARE_TOKEN=your-cloudflare-token CLOUDFLARE_HOSTNAME=your-hostname.example.com npx smart-relay
+   CLOUDFLARE_ENABLED=true npx smart-relay
    ```
 
 3. When the server starts with Cloudflare tunnel enabled, it will display the public URL that can be used to access your
    proxy server from anywhere.
 
-Note: A Cloudflare token is required for creating a tunnel. You can create a token in the Cloudflare Zero Trust
-dashboard under Access > Tunnels.
+Note: You need to have Cloudflare CLI installed and authenticated to use this feature.
 
 ### Using Callback URL for Tunnel Notification
 

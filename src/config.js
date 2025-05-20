@@ -22,8 +22,6 @@ const DEFAULT_NGROK_REGION = 'us';
 
 // Cloudflare tunnel configuration defaults
 const DEFAULT_CLOUDFLARE_ENABLED = false;
-const DEFAULT_CLOUDFLARE_TOKEN = '';
-const DEFAULT_CLOUDFLARE_HOSTNAME = '';
 
 // Callback configuration defaults
 const DEFAULT_CALLBACK_URL = '';
@@ -49,8 +47,6 @@ const defaultConfig = {
     NGROK_TOKEN: DEFAULT_NGROK_TOKEN,
     NGROK_REGION: DEFAULT_NGROK_REGION,
     CLOUDFLARE_ENABLED: DEFAULT_CLOUDFLARE_ENABLED,
-    CLOUDFLARE_TOKEN: DEFAULT_CLOUDFLARE_TOKEN,
-    CLOUDFLARE_HOSTNAME: DEFAULT_CLOUDFLARE_HOSTNAME,
     CALLBACK_URL: DEFAULT_CALLBACK_URL,
     CALLBACK_AUTH_HEADER: DEFAULT_CALLBACK_AUTH_HEADER,
     CALLBACK_INTERVAL: DEFAULT_CALLBACK_INTERVAL
@@ -103,8 +99,6 @@ async function getConfig() {
 
     // Determine Cloudflare tunnel settings from config file, environment variables, or defaults
     const CLOUDFLARE_ENABLED = process.env.CLOUDFLARE_ENABLED === 'true' || configData.CLOUDFLARE_ENABLED || DEFAULT_CLOUDFLARE_ENABLED;
-    const CLOUDFLARE_TOKEN = process.env.CLOUDFLARE_TOKEN || configData.CLOUDFLARE_TOKEN || DEFAULT_CLOUDFLARE_TOKEN;
-    const CLOUDFLARE_HOSTNAME = process.env.CLOUDFLARE_HOSTNAME || configData.CLOUDFLARE_HOSTNAME || DEFAULT_CLOUDFLARE_HOSTNAME;
 
     // Determine callback settings from config file, environment variables, or defaults
     const CALLBACK_URL = process.env.CALLBACK_URL || configData.CALLBACK_URL || DEFAULT_CALLBACK_URL;
@@ -118,8 +112,6 @@ async function getConfig() {
         NGROK_TOKEN,
         NGROK_REGION,
         CLOUDFLARE_ENABLED,
-        CLOUDFLARE_TOKEN,
-        CLOUDFLARE_HOSTNAME,
         CALLBACK_URL,
         CALLBACK_AUTH_HEADER,
         CALLBACK_INTERVAL

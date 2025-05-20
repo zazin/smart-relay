@@ -236,29 +236,6 @@ async function startServer() {
                         return;
                     }
 
-                    // No need for a tunnelOptions object anymore as we're using command line arguments directly
-
-                    // Check if the tunnel already exists, create it if it doesn't
-                    try {
-                        const {execSync} = require('child_process');
-
-                        // Check if the tunnel exists by listing tunnels and searching for "smart-relay"
-                        console.log('Checking if Cloudflare tunnel "smart-relay" exists...');
-                        const tunnelListOutput = execSync('cloudflared tunnel list', {encoding: 'utf8'});
-
-                        // If the tunnel doesn't exist in the list, create it
-                        if (!tunnelListOutput.includes('smart-relay')) {
-                            console.log('Cloudflare tunnel "smart-relay" does not exist. Creating it...');
-                            execSync('cloudflared tunnel create smart-relay', {stdio: 'inherit'});
-                            console.log('Cloudflare tunnel "smart-relay" created successfully.');
-                        } else {
-                            console.log('Cloudflare tunnel "smart-relay" already exists. Skipping creation.');
-                        }
-                    } catch (error) {
-                        console.error(`Error checking or creating Cloudflare tunnel: ${error.message}`);
-                        return;
-                    }
-
                     // Function to create and start a tunnel with retry logic
                     const createTunnel = async (retryCount = 0, maxRetries = 3) => {
                         console.log(`Attempting to create Cloudflare tunnel (attempt ${retryCount + 1}/${maxRetries + 1})...`);
@@ -267,16 +244,20 @@ async function startServer() {
                             // Get the tunnel URL when it's available
                             return await new Promise((resolve, reject) => {
                                 // Prepare command line arguments for cloudflared
-                                const args = ['tunnel', 'run'];
+                                const args = ['tunnel'];
 
                                 // Add URL argument
-                                args.push('--url', `http://localhost:${config.PORT}`);
-                                args.push('smart-relay');
-
+                                args.push('--url', `localhost:${config.PORT}`);
                                 console.log(`Executing: cloudflared ${args.join(' ')}`);
 
-                                // Spawn cloudflared process
-                                const tunnelProcess = spawn('cloudflared', args);
+                                // Spawn cloudflared process in the background
+                                const tunnelProcess = spawn('cloudflared', args, {
+                                    detached: true,
+                                    stdio: ['ignore', 'pipe', 'pipe']
+                                });
+
+                                // Unref the child process to allow the Node.js process to exit independently
+                                tunnelProcess.unref();
 
                                 let tunnelUrl = null;
                                 let stdoutBuffer = '';
@@ -285,7 +266,7 @@ async function startServer() {
                                 // Set timeout for connection
                                 const timeout = setTimeout(() => {
                                     console.error('Cloudflare tunnel connection timed out');
-                                    tunnelProcess.kill();
+                                    process.kill(-tunnelProcess.pid); // Kill the process group
                                     reject(new Error('Cloudflare tunnel connection timed out after 30 seconds'));
                                 }, 30000); // 30-second timeout
 
@@ -307,7 +288,11 @@ async function startServer() {
                                             url: tunnelUrl,
                                             tunnel: {
                                                 stop: () => {
-                                                    tunnelProcess.kill();
+                                                    try {
+                                                        process.kill(-tunnelProcess.pid); // Kill the process group
+                                                    } catch (error) {
+                                                        console.error(`Error stopping cloudflared: ${error.message}`);
+                                                    }
                                                 }
                                             }
                                         });

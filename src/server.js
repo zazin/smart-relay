@@ -7,6 +7,7 @@
 const http = require('http');
 const {handleRequest} = require('./request-handlers');
 const {startTunnel} = require('./services/tunnel');
+const logger = require('./logger');
 
 /**
  * Start the proxy server
@@ -21,7 +22,7 @@ async function startServer(config) {
     return new Promise((resolve, reject) => {
         // Start listening
         server.listen(config.PORT, async () => {
-            console.log(`Proxy server is running on port ${config.PORT}`);
+            logger.info(`Proxy server is running on port ${config.PORT}`);
 
             try {
                 // Start a tunnel if enabled
@@ -33,7 +34,7 @@ async function startServer(config) {
                     tunnel
                 });
             } catch (error) {
-                console.error(`Failed to start tunnel: ${error.message}`);
+                logger.error(`Failed to start tunnel: ${error.message}`);
                 // Still resolve with the server even if a tunnel fails
                 resolve({
                     server,
@@ -44,7 +45,7 @@ async function startServer(config) {
 
         // Handle server errors
         server.on('error', (error) => {
-            console.error(`Server error: ${error.message}`);
+            logger.error(`Server error: ${error.message}`);
             reject(error);
         });
     });
@@ -64,13 +65,13 @@ async function stopServer(server, tunnel) {
             try {
                 tunnel.stop();
             } catch (error) {
-                console.error(`Error stopping tunnel: ${error.message}`);
+                logger.error(`Error stopping tunnel: ${error.message}`);
             }
         }
 
         // Close the server
         server.close(() => {
-            console.log('Server stopped');
+            logger.info('Server stopped');
             resolve();
         });
     });

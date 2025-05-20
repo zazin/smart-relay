@@ -11,6 +11,7 @@
 
 const getConfig = require('./config');
 const {startServer} = require('./server');
+const logger = require('./logger');
 
 /**
  * Initialize and start the proxy server
@@ -19,23 +20,23 @@ async function init() {
     try {
         // Load configuration
         const config = await getConfig();
-        console.log('config: ', config);
+        logger.debug('config: ' + JSON.stringify(config));
 
         // Start the server
         const {server, tunnel} = await startServer(config);
 
         // Handle process termination
         process.on('SIGINT', async () => {
-            console.log('Shutting down...');
+            logger.info('Shutting down...');
 
             // Close the server
             server.close(() => {
-                console.log('Server closed');
+                logger.info('Server closed');
                 process.exit(0);
             });
         });
     } catch (error) {
-        console.error(`Failed to start server: ${error.message}`);
+        logger.error(`Failed to start server: ${error.message}`);
         process.exit(1);
     }
 }

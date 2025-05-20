@@ -4,8 +4,9 @@
  * @module services/tunnel
  */
 
-const { startNgrokTunnel } = require('./ngrok');
-const { startCloudflaredTunnel } = require('./cloudflare/index');
+const {startNgrokTunnel} = require('./ngrok');
+const {startCloudflaredTunnel} = require('./cloudflare/index');
+const logger = require("../../logger");
 
 /**
  * Start a tunnel based on the configuration
@@ -18,7 +19,7 @@ async function startTunnel(config) {
         try {
             return await startNgrokTunnel(config);
         } catch (error) {
-            console.error(`Failed to start ngrok tunnel: ${error.message}`);
+            logger.error(`Failed to start ngrok tunnel: ${error.message}`);
         }
     }
 
@@ -26,7 +27,7 @@ async function startTunnel(config) {
         try {
             return await startCloudflaredTunnel(config);
         } catch (error) {
-            console.error(`Failed to start Cloudflare tunnel: ${error.message}`);
+            logger.error(`Failed to start Cloudflare tunnel: ${error.message}`);
         }
     }
 

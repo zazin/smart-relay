@@ -9,6 +9,7 @@ const https = require('https');
 const url = require('url');
 const { buildFullUrl } = require('./utils');
 const { handleProxyError } = require('./error-handlers');
+const logger = require('./logger');
 
 /**
  * Creates request options for the destination server
@@ -48,7 +49,7 @@ function createRequestOptions(parsedUrl, protocol, req) {
  */
 function handleProxyResponse(proxyRes, clientRes, parsedUrl, options, clientReq) {
     const fullUrl = buildFullUrl(parsedUrl, options.path);
-    console.log(`${proxyRes.statusCode} | OK | ${clientReq.method} | ${fullUrl}`);
+    logger.info(`${proxyRes.statusCode} | OK | ${clientReq.method} | ${fullUrl}`);
 
     clientRes.writeHead(proxyRes.statusCode, proxyRes.headers);
     proxyRes.pipe(clientRes, {end: true});

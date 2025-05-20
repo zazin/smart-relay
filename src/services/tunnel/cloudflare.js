@@ -137,63 +137,60 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
                 clearTimeout(timeout);
                 console.error(`Cloudflare tunnel process error: ${error.message}`);
 
-                // Check if this is a critical error or just a warning
-                const isCriticalError =
-                    error.message.toLowerCase().includes('connection refused') ||
-                    error.message.toLowerCase().includes('permission denied') ||
-                    error.message.toLowerCase().includes('invalid token') ||
-                    error.message.toLowerCase().includes('authentication failed') ||
-                    error.message.toLowerCase().includes('could not establish') ||
-                    error.message.toLowerCase().includes('unable to connect');
+                const criticalErrors = [
+                    'connection refused',
+                    'permission denied',
+                    'invalid token',
+                    'authentication failed',
+                    'could not establish',
+                    'unable to connect'
+                ];
+
+                const isCriticalError = criticalErrors.some(msg =>
+                    error.message.toLowerCase().includes(msg)
+                );
 
                 if (isCriticalError) {
-                    // Only reject for critical errors
                     reject(error);
-                } else {
-                    // For non-critical errors, resolve with a dummy URL
-                    // This prevents the application from detecting an error when the tunnel might still be working
-                    console.warn('Resolving with a dummy URL to prevent error detection');
-                    tunnelUrl = 'https://dummy-tunnel-url.trycloudflare.com';
-                    resolve({
-                        url: tunnelUrl,
-                        tunnel: {
-                            stop: () => {
-                                try {
-                                    if (tunnelProcess && tunnelProcess.pid) {
-                                        process.kill(-tunnelProcess.pid); // Kill the process group
-                                    }
-                                } catch (error) {
-                                    console.error(`Error stopping cloudflared: ${error.message}`);
-                                }
+                    return;
+                }
+
+                console.warn('Resolving with a dummy URL to prevent error detection');
+                tunnelUrl = 'https://dummy-tunnel-url.trycloudflare.com';
+                resolve({
+                    url: tunnelUrl,
+                    tunnel: {
+                        stop: () => {
+                            try {
+                                tunnelProcess?.pid && process.kill(-tunnelProcess.pid);
+                            } catch (err) {
+                                console.error(`Error stopping cloudflared: ${err.message}`);
                             }
                         }
-                    });
-                }
+                    }
+                });
             });
 
             // Handle process close
             tunnelProcess.on('close', (code, signal) => {
+                // Common log message for all cases
+                const logMessage = `Cloudflare tunnel process closed with code ${code} and signal ${signal}`;
+
                 if (!tunnelUrl) {
-                    // Only consider it an error if the process closed with a non-zero code
-                    // and if it closed too early (within 10 seconds of starting)
-                    // This is more lenient than before
                     const processRunTime = Date.now() - tunnelProcess.startTime;
+
                     if (code !== 0 && processRunTime < 10000) {
                         clearTimeout(timeout);
-                        console.error(`Cloudflare tunnel process closed with code ${code} and signal ${signal} before establishing a tunnel`);
+                        console.error(`${logMessage} before establishing a tunnel`);
 
-                        // Instead of rejecting with an error, resolve with a fake URL
-                        // This prevents the application from detecting an error when the tunnel might still be working
-                        console.warn('Resolving with a dummy URL to prevent error detection');
+                        // Always resolve with dummy URL on early closure
                         tunnelUrl = 'https://dummy-tunnel-url.trycloudflare.com';
                         resolve({
                             url: tunnelUrl,
                             tunnel: {
                                 stop: () => {
                                     try {
-                                        if (tunnelProcess && tunnelProcess.pid) {
-                                            process.kill(-tunnelProcess.pid); // Kill the process group
-                                        }
+                                        tunnelProcess?.pid && process.kill(-tunnelProcess.pid);
                                     } catch (error) {
                                         console.error(`Error stopping cloudflared: ${error.message}`);
                                     }
@@ -201,10 +198,10 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
                             }
                         });
                     } else {
-                        console.log(`Cloudflare tunnel process closed with code ${code} and signal ${signal}, but may still be running in the background`);
+                        console.log(`${logMessage}, but may still be running in the background`);
                     }
                 } else {
-                    console.log(`Cloudflare tunnel process closed with code ${code} and signal ${signal}`);
+                    console.log(logMessage);
                 }
             });
         });

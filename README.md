@@ -27,6 +27,10 @@ supports both HTTP and HTTPS protocols.
 
 The server can automatically create an ngrok tunnel to expose your local server to the internet.
 
+**Prerequisites:**
+- You must have the `ngrok` CLI tool installed on your system. You can download it from the [ngrok website](https://ngrok.com/download).
+- The `ngrok` command must be available in your system's PATH.
+
 1. Enable ngrok in the configuration file at `~/.smart-relay/config.json`:
    ```json
    {
@@ -51,6 +55,10 @@ authtoken by signing up at [ngrok.com](https://ngrok.com/).
 ### Using Cloudflare Tunnel for Public Access
 
 The server can also create a Cloudflare tunnel to expose your local server to the internet.
+
+**Prerequisites:**
+- You must have the `cloudflared` CLI tool installed on your system. You can download it from the [Cloudflare website](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
+- The `cloudflared` command must be available in your system's PATH.
 
 1. Enable Cloudflare tunnel in the configuration file at `~/.smart-relay/config.json`:
    ```json

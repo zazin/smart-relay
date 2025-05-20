@@ -46,6 +46,29 @@ The server can automatically create an ngrok tunnel to expose your local server 
 
 Note: While an authtoken is not strictly required, ngrok has limitations for unauthenticated tunnels. Get your free authtoken by signing up at [ngrok.com](https://ngrok.com/).
 
+### Using Cloudflare Tunnel for Public Access
+
+The server can also create a Cloudflare tunnel to expose your local server to the internet.
+
+1. Enable Cloudflare tunnel in the configuration file at `~/.smart-relay/config.json`:
+   ```json
+   {
+     "PORT": 8080,
+     "CLOUDFLARE_ENABLED": true,
+     "CLOUDFLARE_TOKEN": "your-cloudflare-token",
+     "CLOUDFLARE_HOSTNAME": "your-hostname.example.com"
+   }
+   ```
+
+2. Or use environment variables:
+   ```bash
+   CLOUDFLARE_ENABLED=true CLOUDFLARE_TOKEN=your-cloudflare-token CLOUDFLARE_HOSTNAME=your-hostname.example.com npx smart-relay
+   ```
+
+3. When the server starts with Cloudflare tunnel enabled, it will display the public URL that can be used to access your proxy server from anywhere.
+
+Note: A Cloudflare token is required for creating a tunnel. You can create a token in the Cloudflare Zero Trust dashboard under Access > Tunnels.
+
 ## Error Handling
 
 The server handles various error scenarios:

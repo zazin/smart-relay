@@ -17,13 +17,17 @@ const DEFAULT_PORT = 8080;
 
 // Ngrok configuration defaults
 const DEFAULT_NGROK_ENABLED = false;
-const DEFAULT_NGROK_AUTHTOKEN = '';
+const DEFAULT_NGROK_TOKEN = '';
 const DEFAULT_NGROK_REGION = 'us';
 
 // Cloudflare tunnel configuration defaults
 const DEFAULT_CLOUDFLARE_ENABLED = false;
 const DEFAULT_CLOUDFLARE_TOKEN = '';
 const DEFAULT_CLOUDFLARE_HOSTNAME = '';
+
+// Callback configuration defaults
+const DEFAULT_CALLBACK_URL = '';
+const DEFAULT_CALLBACK_AUTH_HEADER = '';
 
 // Content type constants
 const CONTENT_TYPE_JSON = 'application/json';
@@ -41,11 +45,13 @@ if (!fs.existsSync(CONFIG_DIR)) {
 let configData = {
     PORT: DEFAULT_PORT,
     NGROK_ENABLED: DEFAULT_NGROK_ENABLED,
-    NGROK_AUTHTOKEN: DEFAULT_NGROK_AUTHTOKEN,
+    NGROK_TOKEN: DEFAULT_NGROK_TOKEN,
     NGROK_REGION: DEFAULT_NGROK_REGION,
     CLOUDFLARE_ENABLED: DEFAULT_CLOUDFLARE_ENABLED,
     CLOUDFLARE_TOKEN: DEFAULT_CLOUDFLARE_TOKEN,
-    CLOUDFLARE_HOSTNAME: DEFAULT_CLOUDFLARE_HOSTNAME
+    CLOUDFLARE_HOSTNAME: DEFAULT_CLOUDFLARE_HOSTNAME,
+    CALLBACK_URL: DEFAULT_CALLBACK_URL,
+    CALLBACK_AUTH_HEADER: DEFAULT_CALLBACK_AUTH_HEADER
 };
 if (!fs.existsSync(CONFIG_FILE)) {
     try {
@@ -68,7 +74,7 @@ const PORT = process.env.PORT || configData.PORT || DEFAULT_PORT;
 
 // Determine ngrok settings from config file, environment variables, or defaults
 const NGROK_ENABLED = process.env.NGROK_ENABLED === 'true' || configData.NGROK_ENABLED || DEFAULT_NGROK_ENABLED;
-const NGROK_AUTHTOKEN = process.env.NGROK_AUTHTOKEN || configData.NGROK_AUTHTOKEN || DEFAULT_NGROK_AUTHTOKEN;
+const NGROK_TOKEN = process.env.NGROK_TOKEN || configData.NGROK_TOKEN || DEFAULT_NGROK_TOKEN;
 const NGROK_REGION = process.env.NGROK_REGION || configData.NGROK_REGION || DEFAULT_NGROK_REGION;
 
 // Determine Cloudflare tunnel settings from config file, environment variables, or defaults
@@ -76,13 +82,19 @@ const CLOUDFLARE_ENABLED = process.env.CLOUDFLARE_ENABLED === 'true' || configDa
 const CLOUDFLARE_TOKEN = process.env.CLOUDFLARE_TOKEN || configData.CLOUDFLARE_TOKEN || DEFAULT_CLOUDFLARE_TOKEN;
 const CLOUDFLARE_HOSTNAME = process.env.CLOUDFLARE_HOSTNAME || configData.CLOUDFLARE_HOSTNAME || DEFAULT_CLOUDFLARE_HOSTNAME;
 
+// Determine callback settings from config file, environment variables, or defaults
+const CALLBACK_URL = process.env.CALLBACK_URL || configData.CALLBACK_URL || DEFAULT_CALLBACK_URL;
+const CALLBACK_AUTH_HEADER = process.env.CALLBACK_AUTH_HEADER || configData.CALLBACK_AUTH_HEADER || DEFAULT_CALLBACK_AUTH_HEADER;
+
 module.exports = {
     PORT,
     CONTENT_TYPE_JSON,
     NGROK_ENABLED,
-    NGROK_AUTHTOKEN,
+    NGROK_TOKEN,
     NGROK_REGION,
     CLOUDFLARE_ENABLED,
     CLOUDFLARE_TOKEN,
-    CLOUDFLARE_HOSTNAME
+    CLOUDFLARE_HOSTNAME,
+    CALLBACK_URL,
+    CALLBACK_AUTH_HEADER
 };

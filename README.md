@@ -32,19 +32,21 @@ The server can automatically create an ngrok tunnel to expose your local server 
    {
      "PORT": 8080,
      "NGROK_ENABLED": true,
-     "NGROK_AUTHTOKEN": "your-ngrok-authtoken",
+     "NGROK_TOKEN": "your-ngrok-token",
      "NGROK_REGION": "us"
    }
    ```
 
 2. Or use environment variables:
    ```bash
-   NGROK_ENABLED=true NGROK_AUTHTOKEN=your-ngrok-authtoken npx smart-relay
+   NGROK_ENABLED=true NGROK_TOKEN=your-ngrok-authtoken npx smart-relay
    ```
 
-3. When the server starts with ngrok enabled, it will display the public URL that can be used to access your proxy server from anywhere.
+3. When the server starts with ngrok enabled, it will display the public URL that can be used to access your proxy
+   server from anywhere.
 
-Note: While an authtoken is not strictly required, ngrok has limitations for unauthenticated tunnels. Get your free authtoken by signing up at [ngrok.com](https://ngrok.com/).
+Note: While an authtoken is not strictly required, ngrok has limitations for unauthenticated tunnels. Get your free
+authtoken by signing up at [ngrok.com](https://ngrok.com/).
 
 ### Using Cloudflare Tunnel for Public Access
 
@@ -65,9 +67,43 @@ The server can also create a Cloudflare tunnel to expose your local server to th
    CLOUDFLARE_ENABLED=true CLOUDFLARE_TOKEN=your-cloudflare-token CLOUDFLARE_HOSTNAME=your-hostname.example.com npx smart-relay
    ```
 
-3. When the server starts with Cloudflare tunnel enabled, it will display the public URL that can be used to access your proxy server from anywhere.
+3. When the server starts with Cloudflare tunnel enabled, it will display the public URL that can be used to access your
+   proxy server from anywhere.
 
-Note: A Cloudflare token is required for creating a tunnel. You can create a token in the Cloudflare Zero Trust dashboard under Access > Tunnels.
+Note: A Cloudflare token is required for creating a tunnel. You can create a token in the Cloudflare Zero Trust
+dashboard under Access > Tunnels.
+
+### Using Callback URL for Tunnel Notification
+
+The server can notify an external service when a tunnel URL is available by sending a POST request to a specified
+callback URL. This is useful for integrating with other systems that need to know the public URL of your tunnel.
+
+1. Configure the callback URL and optional authentication header in the configuration file at
+   `~/.smart-relay/config.json`:
+   ```json
+   {
+     "PORT": 8080,
+     "NGROK_ENABLED": true,
+     "CALLBACK_URL": "https://your-api.example.com/webhook",
+     "CALLBACK_AUTH_HEADER": "Bearer your-auth-token"
+   }
+   ```
+
+2. Or use environment variables:
+   ```bash
+   NGROK_ENABLED=true CALLBACK_URL=https://your-api.example.com/webhook CALLBACK_AUTH_HEADER="Bearer your-auth-token" npx smart-relay
+   ```
+
+3. When a tunnel is established (either ngrok or Cloudflare), the server will send a POST request to the callback URL
+   with the tunnel URL in JSON format:
+   ```json
+   {
+     "tunnelUrl": "https://your-tunnel-url.ngrok.io"
+   }
+   ```
+
+Note: The callback is only sent once when the tunnel is first established, not on every request. This feature is
+designed to notify an external service about the public tunnel URL.
 
 ## Error Handling
 
@@ -92,7 +128,8 @@ The project has been modularized for better maintainability:
 - `src/request-handlers.js` - Request handling and routing
 - `tests/` - Test files for the application
 
-The server now includes ngrok integration for exposing your local server to the internet, making it easier to test webhooks and share your proxy with others.
+The server now includes ngrok integration for exposing your local server to the internet, making it easier to test
+webhooks and share your proxy with others.
 
 ### Testing
 

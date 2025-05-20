@@ -15,18 +15,7 @@ const url = require('url');
 const ngrok = require('ngrok');
 const cloudflared = require('cloudflared');
 const {handleRequest} = require('./request-handlers');
-const {
-    PORT,
-    NGROK_ENABLED,
-    NGROK_TOKEN,
-    NGROK_REGION,
-    CLOUDFLARE_ENABLED,
-    CLOUDFLARE_TOKEN,
-    CLOUDFLARE_HOSTNAME,
-    CALLBACK_URL,
-    CALLBACK_AUTH_HEADER,
-    CONTENT_TYPE_JSON
-} = require('./config');
+const getConfig = require('./config');
 
 // Flag to track if callback has been sent
 let callbackSent = false;
@@ -35,16 +24,17 @@ let callbackSent = false;
  * Send the tunnel URL to the callback URL
  *
  * @param {string} tunnelUrl - The tunnel URL to send
+ * @param {Object} config - The configuration object
  * @returns {Promise<void>}
  */
-async function sendCallback(tunnelUrl) {
+async function sendCallback(tunnelUrl, config) {
     // Skip if the callback URL is not configured or the callback was already sent
-    if (!CALLBACK_URL || callbackSent) {
+    if (!config.CALLBACK_URL || callbackSent) {
         return;
     }
 
     try {
-        const parsedUrl = url.parse(CALLBACK_URL);
+        const parsedUrl = url.parse(config.CALLBACK_URL);
         const isHttps = parsedUrl.protocol === 'https:';
         const options = {
             hostname: parsedUrl.hostname,
@@ -52,13 +42,13 @@ async function sendCallback(tunnelUrl) {
             path: parsedUrl.path,
             method: 'POST',
             headers: {
-                'Content-Type': CONTENT_TYPE_JSON
+                'Content-Type': config.CONTENT_TYPE_JSON
             }
         };
 
         // Add auth header if configured
-        if (CALLBACK_AUTH_HEADER) {
-            options.headers['Authorization'] = CALLBACK_AUTH_HEADER;
+        if (config.CALLBACK_AUTH_HEADER) {
+            options.headers['Authorization'] = config.CALLBACK_AUTH_HEADER;
         }
 
         // Prepare the request data
@@ -76,7 +66,7 @@ async function sendCallback(tunnelUrl) {
                 });
                 res.on('end', () => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
-                        console.log(`Successfully sent tunnel URL to callback: ${CALLBACK_URL}`);
+                        console.log(`Successfully sent tunnel URL to callback: ${config.CALLBACK_URL}`);
                         callbackSent = true;
                         resolve();
                     } else {
@@ -100,75 +90,92 @@ async function sendCallback(tunnelUrl) {
     }
 }
 
-// Create and start the proxy server
-const server = http.createServer(handleRequest);
+/**
+ * Start the proxy server
+ */
+async function startServer() {
+    try {
+        // Load configuration
+        const config = await getConfig();
 
-server.listen(PORT, async () => {
-    console.log(`Proxy server is running on port ${PORT}`);
+        // Create the proxy server
+        const server = http.createServer(handleRequest);
 
-    // Start ngrok tunnel if enabled
-    if (NGROK_ENABLED) {
-        try {
-            // Check if auth token is provided
-            if (!NGROK_TOKEN) {
-                console.warn('Ngrok authtoken is not provided. Public tunnels may be limited.');
+        // Start listening
+        server.listen(config.PORT, async () => {
+            console.log(`Proxy server is running on port ${config.PORT}`);
+
+            // Start ngrok tunnel if enabled
+            if (config.NGROK_ENABLED) {
+                try {
+                    // Check if auth token is provided
+                    if (!config.NGROK_TOKEN) {
+                        console.warn('Ngrok authtoken is not provided. Public tunnels may be limited.');
+                    }
+
+                    // Configure ngrok options
+                    const ngrokOptions = {
+                        addr: config.PORT,
+                        region: config.NGROK_REGION
+                    };
+
+                    // Add auth token if provided
+                    if (config.NGROK_TOKEN) {
+                        ngrokOptions.authtoken = config.NGROK_TOKEN;
+                    }
+
+                    // Start ngrok tunnel
+                    const url = await ngrok.connect(ngrokOptions);
+                    console.log(`Ngrok tunnel is running at: ${url}`);
+                    console.log(`You can access your proxy server from the internet using the above URL.`);
+
+                    // Send callback with the tunnel URL
+                    await sendCallback(url, config);
+                } catch (error) {
+                    console.error(`Failed to start ngrok tunnel: ${error.message}`);
+                }
             }
 
-            // Configure ngrok options
-            const ngrokOptions = {
-                addr: PORT,
-                region: NGROK_REGION
-            };
+            // Start Cloudflare tunnel if enabled
+            if (config.CLOUDFLARE_ENABLED) {
+                try {
+                    // Check if a token is provided
+                    if (!config.CLOUDFLARE_TOKEN) {
+                        console.error('Cloudflare token is required for creating a tunnel.');
+                        return;
+                    }
 
-            // Add auth token if provided
-            if (NGROK_TOKEN) {
-                ngrokOptions.authtoken = NGROK_TOKEN;
+                    // Configure Cloudflare tunnel options
+                    const cloudflareOptions = {
+                        token: config.CLOUDFLARE_TOKEN,
+                        hostname: config.CLOUDFLARE_HOSTNAME,
+                        url: `http://localhost:${config.PORT}`
+                    };
+
+                    // Start Cloudflare tunnel
+                    const tunnel = await cloudflared.connect(cloudflareOptions);
+                    console.log(`Cloudflare tunnel is running at: ${tunnel.url}`);
+                    console.log(`You can access your proxy server from the internet using the above URL.`);
+
+                    // Send callback with the tunnel URL
+                    await sendCallback(tunnel.url, config);
+
+                    // Handle tunnel closure
+                    process.on('SIGINT', async () => {
+                        console.log('Closing Cloudflare tunnel...');
+                        await tunnel.disconnect();
+                        process.exit(0);
+                    });
+                } catch (error) {
+                    console.error(`Failed to start Cloudflare tunnel: ${error.message}`);
+                }
             }
-
-            // Start ngrok tunnel
-            const url = await ngrok.connect(ngrokOptions);
-            console.log(`Ngrok tunnel is running at: ${url}`);
-            console.log(`You can access your proxy server from the internet using the above URL.`);
-
-            // Send callback with the tunnel URL
-            await sendCallback(url);
-        } catch (error) {
-            console.error(`Failed to start ngrok tunnel: ${error.message}`);
-        }
+        });
+    } catch (error) {
+        console.error(`Failed to start server: ${error.message}`);
+        process.exit(1);
     }
+}
 
-    // Start Cloudflare tunnel if enabled
-    if (CLOUDFLARE_ENABLED) {
-        try {
-            // Check if a token is provided
-            if (!CLOUDFLARE_TOKEN) {
-                console.error('Cloudflare token is required for creating a tunnel.');
-                return;
-            }
-
-            // Configure Cloudflare tunnel options
-            const cloudflareOptions = {
-                token: CLOUDFLARE_TOKEN,
-                hostname: CLOUDFLARE_HOSTNAME,
-                url: `http://localhost:${PORT}`
-            };
-
-            // Start Cloudflare tunnel
-            const tunnel = await cloudflared.connect(cloudflareOptions);
-            console.log(`Cloudflare tunnel is running at: ${tunnel.url}`);
-            console.log(`You can access your proxy server from the internet using the above URL.`);
-
-            // Send callback with the tunnel URL
-            await sendCallback(tunnel.url);
-
-            // Handle tunnel closure
-            process.on('SIGINT', async () => {
-                console.log('Closing Cloudflare tunnel...');
-                await tunnel.disconnect();
-                process.exit(0);
-            });
-        } catch (error) {
-            console.error(`Failed to start Cloudflare tunnel: ${error.message}`);
-        }
-    }
-});
+// Start the server
+startServer();

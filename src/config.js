@@ -7,10 +7,10 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { runSetup, CONFIG_FILE } = require('./setup');
 
 // Config file path
 const CONFIG_DIR = path.join(os.homedir(), '.smart-relay');
-const CONFIG_FILE = path.join(CONFIG_DIR, 'config.json');
 
 // Default configuration
 const DEFAULT_PORT = 8080;
@@ -41,8 +41,8 @@ if (!fs.existsSync(CONFIG_DIR)) {
     }
 }
 
-// Read or create a config file
-let configData = {
+// Default configuration object
+const defaultConfig = {
     PORT: DEFAULT_PORT,
     NGROK_ENABLED: DEFAULT_NGROK_ENABLED,
     NGROK_TOKEN: DEFAULT_NGROK_TOKEN,
@@ -53,48 +53,73 @@ let configData = {
     CALLBACK_URL: DEFAULT_CALLBACK_URL,
     CALLBACK_AUTH_HEADER: DEFAULT_CALLBACK_AUTH_HEADER
 };
-if (!fs.existsSync(CONFIG_FILE)) {
-    try {
-        fs.writeFileSync(CONFIG_FILE, JSON.stringify(configData, null, 2));
-        console.log(`Created default config file at ${CONFIG_FILE}`);
-    } catch (err) {
-        console.error(`Failed to create config file: ${err.message}`);
-    }
-} else {
-    try {
-        const fileContent = fs.readFileSync(CONFIG_FILE, 'utf8');
-        configData = JSON.parse(fileContent);
-    } catch (err) {
-        console.error(`Failed to read config file: ${err.message}`);
+
+// Read or create a config file
+let configData = { ...defaultConfig };
+
+// Check if this is the first run or config file doesn't exist
+const isFirstRun = !fs.existsSync(CONFIG_FILE);
+
+// Function to load configuration
+async function loadConfig() {
+    if (isFirstRun) {
+        try {
+            // Run interactive setup
+            console.log('No configuration found. Starting interactive setup...');
+            configData = await runSetup();
+        } catch (err) {
+            console.error(`Failed to run setup: ${err.message}`);
+            // Fall back to default config
+            fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
+            console.log(`Created default config file at ${CONFIG_FILE}`);
+        }
+    } else {
+        try {
+            const fileContent = fs.readFileSync(CONFIG_FILE, 'utf8');
+            configData = JSON.parse(fileContent);
+        } catch (err) {
+            console.error(`Failed to read config file: ${err.message}`);
+        }
     }
 }
 
-// Determine PORT value from config file, environment variable, or default
-const PORT = process.env.PORT || configData.PORT || DEFAULT_PORT;
+/**
+ * Get configuration values
+ * @returns {Object} Configuration object with all settings
+ */
+async function getConfig() {
+    // Load configuration if needed
+    await loadConfig();
 
-// Determine ngrok settings from config file, environment variables, or defaults
-const NGROK_ENABLED = process.env.NGROK_ENABLED === 'true' || configData.NGROK_ENABLED || DEFAULT_NGROK_ENABLED;
-const NGROK_TOKEN = process.env.NGROK_TOKEN || configData.NGROK_TOKEN || DEFAULT_NGROK_TOKEN;
-const NGROK_REGION = process.env.NGROK_REGION || configData.NGROK_REGION || DEFAULT_NGROK_REGION;
+    // Determine PORT value from config file, environment variable, or default
+    const PORT = process.env.PORT || configData.PORT || DEFAULT_PORT;
 
-// Determine Cloudflare tunnel settings from config file, environment variables, or defaults
-const CLOUDFLARE_ENABLED = process.env.CLOUDFLARE_ENABLED === 'true' || configData.CLOUDFLARE_ENABLED || DEFAULT_CLOUDFLARE_ENABLED;
-const CLOUDFLARE_TOKEN = process.env.CLOUDFLARE_TOKEN || configData.CLOUDFLARE_TOKEN || DEFAULT_CLOUDFLARE_TOKEN;
-const CLOUDFLARE_HOSTNAME = process.env.CLOUDFLARE_HOSTNAME || configData.CLOUDFLARE_HOSTNAME || DEFAULT_CLOUDFLARE_HOSTNAME;
+    // Determine ngrok settings from config file, environment variables, or defaults
+    const NGROK_ENABLED = process.env.NGROK_ENABLED === 'true' || configData.NGROK_ENABLED || DEFAULT_NGROK_ENABLED;
+    const NGROK_TOKEN = process.env.NGROK_TOKEN || configData.NGROK_TOKEN || DEFAULT_NGROK_TOKEN;
+    const NGROK_REGION = process.env.NGROK_REGION || configData.NGROK_REGION || DEFAULT_NGROK_REGION;
 
-// Determine callback settings from config file, environment variables, or defaults
-const CALLBACK_URL = process.env.CALLBACK_URL || configData.CALLBACK_URL || DEFAULT_CALLBACK_URL;
-const CALLBACK_AUTH_HEADER = process.env.CALLBACK_AUTH_HEADER || configData.CALLBACK_AUTH_HEADER || DEFAULT_CALLBACK_AUTH_HEADER;
+    // Determine Cloudflare tunnel settings from config file, environment variables, or defaults
+    const CLOUDFLARE_ENABLED = process.env.CLOUDFLARE_ENABLED === 'true' || configData.CLOUDFLARE_ENABLED || DEFAULT_CLOUDFLARE_ENABLED;
+    const CLOUDFLARE_TOKEN = process.env.CLOUDFLARE_TOKEN || configData.CLOUDFLARE_TOKEN || DEFAULT_CLOUDFLARE_TOKEN;
+    const CLOUDFLARE_HOSTNAME = process.env.CLOUDFLARE_HOSTNAME || configData.CLOUDFLARE_HOSTNAME || DEFAULT_CLOUDFLARE_HOSTNAME;
 
-module.exports = {
-    PORT,
-    CONTENT_TYPE_JSON,
-    NGROK_ENABLED,
-    NGROK_TOKEN,
-    NGROK_REGION,
-    CLOUDFLARE_ENABLED,
-    CLOUDFLARE_TOKEN,
-    CLOUDFLARE_HOSTNAME,
-    CALLBACK_URL,
-    CALLBACK_AUTH_HEADER
-};
+    // Determine callback settings from config file, environment variables, or defaults
+    const CALLBACK_URL = process.env.CALLBACK_URL || configData.CALLBACK_URL || DEFAULT_CALLBACK_URL;
+    const CALLBACK_AUTH_HEADER = process.env.CALLBACK_AUTH_HEADER || configData.CALLBACK_AUTH_HEADER || DEFAULT_CALLBACK_AUTH_HEADER;
+
+    return {
+        PORT,
+        CONTENT_TYPE_JSON,
+        NGROK_ENABLED,
+        NGROK_TOKEN,
+        NGROK_REGION,
+        CLOUDFLARE_ENABLED,
+        CLOUDFLARE_TOKEN,
+        CLOUDFLARE_HOSTNAME,
+        CALLBACK_URL,
+        CALLBACK_AUTH_HEADER
+    };
+}
+
+module.exports = getConfig;

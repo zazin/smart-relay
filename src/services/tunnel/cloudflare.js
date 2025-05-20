@@ -274,70 +274,49 @@ async function startCloudflaredTunnel(config) {
             };
         }
     } catch (error) {
-        // Check if this is a critical error or just a warning
-        const isCriticalError =
-            error.message.toLowerCase().includes('connection refused') ||
-            error.message.toLowerCase().includes('permission denied') ||
-            error.message.toLowerCase().includes('invalid token') ||
-            error.message.toLowerCase().includes('authentication failed') ||
-            error.message.toLowerCase().includes('could not establish') ||
-            error.message.toLowerCase().includes('unable to connect');
-
-        // Also check if the error message contains any of these specific critical error patterns
-        const specificCriticalPatterns = [
-            'EACCES', // Permission denied
-            'EADDRINUSE', // Address already in use
-            'ECONNREFUSED', // Connection refused
-            'ENOTFOUND', // Host not found
-            'ETIMEDOUT', // Connection timed out
-            'certificate has expired', // SSL certificate expired
-            'unable to verify the first certificate', // SSL certificate verification failed
-            'self signed certificate', // Self-signed certificate
-            'certificate is not trusted' // Untrusted certificate
+        const criticalPatterns = [
+            'connection refused',
+            'permission denied',
+            'invalid token',
+            'authentication failed',
+            'could not establish',
+            'unable to connect',
+            'EACCES',
+            'EADDRINUSE',
+            'ECONNREFUSED',
+            'ENOTFOUND',
+            'ETIMEDOUT',
+            'certificate has expired',
+            'unable to verify the first certificate',
+            'self signed certificate',
+            'certificate is not trusted'
         ];
 
-        const hasSpecificCriticalPattern = specificCriticalPatterns.some(pattern =>
+        const isCriticalError = criticalPatterns.some(pattern =>
             error.message.toLowerCase().includes(pattern.toLowerCase())
         );
 
-        if (isCriticalError || hasSpecificCriticalPattern) {
-            console.error(`Failed to establish Cloudflare tunnel after multiple attempts: ${error.message}`);
+        if (isCriticalError) {
+            console.error(`Failed to establish Cloudflare tunnel: ${error.message}`);
             console.log('Please check your Cloudflare token and network connectivity.');
-            console.log('If the problem persists, try the following:');
-            console.log('1. Verify your Cloudflare token is valid and has the necessary permissions');
-            console.log('2. Check your network connectivity and firewall settings');
-            console.log('3. Try running with a different token or configuration');
 
-            // Even for critical errors, we'll return a fake tunnel object if the error message contains "Requesting new quick Tunnel"
-            // This is because the tunnel might still be working even if there was an error in the process
             if (error.message.includes('Requesting new quick Tunnel') ||
-                (typeof error.stack === 'string' && error.stack.includes('Requesting new quick Tunnel'))) {
-                console.warn('Detected "Requesting new quick Tunnel" in the error message.');
-                console.warn('The tunnel may still be working correctly despite the error.');
+                (error.stack && error.stack.includes('Requesting new quick Tunnel'))) {
+                console.warn('Tunnel may still be working despite the error');
                 return {
                     url: 'https://dummy-tunnel-url.trycloudflare.com',
-                    stop: () => {
-                        console.log('Closing Cloudflare tunnel...');
-                        console.log('Cloudflare tunnel closed successfully');
-                    }
+                    stop: () => console.log('Cloudflare tunnel closed')
                 };
             }
 
             throw error;
-        } else {
-            // For non-critical errors, log a warning but return a valid tunnel object
-            console.warn(`Cloudflare tunnel encountered a non-critical issue: ${error.message}`);
-            console.warn('The tunnel may still be working correctly.');
-
-            // Return a fake tunnel object that won't cause the application to fail
-            return {
-                url: 'https://dummy-tunnel-url.trycloudflare.com',
-                stop: () => {
-                    console.log('Closing Cloudflare tunnel...');
-                    console.log('Cloudflare tunnel closed successfully');
-                }
-            };
         }
+
+        console.warn(`Non-critical tunnel issue: ${error.message}`);
+        return {
+            url: 'https://dummy-tunnel-url.trycloudflare.com',
+            stop: () => console.log('Cloudflare tunnel closed')
+        };
     }
 }
 

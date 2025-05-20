@@ -305,40 +305,6 @@ async function startServer() {
                                     stderrBuffer += output;
                                     console.error(`cloudflared error: ${output.trim()}`);
                                 });
-
-                                // Handle process exit
-                                tunnelProcess.on('exit', (code) => {
-                                    clearTimeout(timeout);
-
-                                    if (code !== 0 && !tunnelUrl) {
-                                        console.error(`Tunnel exited with code: ${code}`);
-                                        if (code === 255) {
-                                            console.error('This error often indicates an authentication issue with your Cloudflare token or network connectivity problems.');
-                                            reject(new Error(`Cloudflare tunnel exited with code ${code}`));
-                                        } else {
-                                            // If we already resolved with a URL, don't reject
-                                            if (!tunnelUrl) {
-                                                reject(new Error(`Cloudflare tunnel exited with code ${code}`));
-                                            }
-                                        }
-                                    } else if (!tunnelUrl) {
-                                        // If process exited normally but we didn't get a URL
-                                        resolve({
-                                            url: null,
-                                            tunnel: {
-                                                stop: () => {
-                                                } // No-op since process already exited
-                                            }
-                                        });
-                                    }
-                                });
-
-                                // Handle process error
-                                tunnelProcess.on('error', (err) => {
-                                    clearTimeout(timeout);
-                                    console.error(`Error spawning cloudflared: ${err.message || err}`);
-                                    reject(new Error(`Error spawning cloudflared: ${err.message || err}`));
-                                });
                             });
                         } catch (error) {
                             // If we haven't reached max retries, try again

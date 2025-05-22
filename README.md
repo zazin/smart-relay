@@ -28,9 +28,41 @@ If you find this project helpful, you can support the author by making a donatio
    curl -H "x-destination-url: https://example.com" http://localhost:8080/path
    ```
 
+### Using Cloudflare Tunnel for Public Access
+
+The server can also create a Cloudflare tunnel to expose your local server to the internet.
+
+**Prerequisites:**
+
+- You must have the `cloudflared` CLI tool installed on your system. You can download it from
+  the [Cloudflare website](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
+- The `cloudflared` command must be available in your system's PATH.
+
+**Note:** The server will automatically check if a tunnel named "smart-relay" exists. If it doesn't exist, it will
+create it (this is a one-time operation). If the tunnel already exists, it will skip the creation step and directly run
+the tunnel.
+
+1. Enable a Cloudflare tunnel in the configuration file at `~/.smart-relay/config.json`:
+   ```json
+   {
+     "PORT": 8080,
+     "CLOUDFLARE_ENABLED": true
+   }
+   ```
+
+2. Or use environment variables:
+   ```bash
+   CLOUDFLARE_ENABLED=true npx smart-relay
+   ```
+
+3. When the server starts with Cloudflare tunnel enabled, it will display the public URL that can be used to access your
+   proxy server from anywhere.
+
+Note: You need to have Cloudflare CLI installed and authenticated to use this feature.
+
 ### Using Ngrok for Public Access
 
-The server can automatically create an ngrok tunnel to expose your local server to the internet.
+The server can automatically create a ngrok tunnel to expose your local server to the internet.
 
 **Prerequisites:**
 
@@ -56,40 +88,8 @@ The server can automatically create an ngrok tunnel to expose your local server 
 3. When the server starts with ngrok enabled, it will display the public URL that can be used to access your proxy
    server from anywhere.
 
-Note: While an authtoken is not strictly required, ngrok has limitations for unauthenticated tunnels. Get your free
-authtoken by signing up at [ngrok.com](https://ngrok.com/).
-
-### Using Cloudflare Tunnel for Public Access
-
-The server can also create a Cloudflare tunnel to expose your local server to the internet.
-
-**Prerequisites:**
-
-- You must have the `cloudflared` CLI tool installed on your system. You can download it from
-  the [Cloudflare website](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
-- The `cloudflared` command must be available in your system's PATH.
-
-**Note:** The server will automatically check if a tunnel named "smart-relay" exists. If it doesn't exist, it will
-create it (this is a one-time operation). If the tunnel already exists, it will skip the creation step and directly run
-the tunnel.
-
-1. Enable Cloudflare tunnel in the configuration file at `~/.smart-relay/config.json`:
-   ```json
-   {
-     "PORT": 8080,
-     "CLOUDFLARE_ENABLED": true
-   }
-   ```
-
-2. Or use environment variables:
-   ```bash
-   CLOUDFLARE_ENABLED=true npx smart-relay
-   ```
-
-3. When the server starts with Cloudflare tunnel enabled, it will display the public URL that can be used to access your
-   proxy server from anywhere.
-
-Note: You need to have Cloudflare CLI installed and authenticated to use this feature.
+Note: While an auth token is not strictly required, ngrok has limitations for unauthenticated tunnels. Get your free
+auth token by signing up at [ngrok.com](https://ngrok.com/).
 
 ### Using Callback URL for Tunnel Notification
 

@@ -3,6 +3,9 @@
 A simple HTTP proxy server that forwards requests to a destination specified in the 'x-destination-url' header. It
 supports both HTTP and HTTPS protocols.
 
+If you find this project helpful, you can support the author by making a donation:
+[Ko-fi](https://ko-fi.com/zazin)
+
 ## Installation
 
 ## Usage
@@ -28,7 +31,9 @@ supports both HTTP and HTTPS protocols.
 The server can automatically create an ngrok tunnel to expose your local server to the internet.
 
 **Prerequisites:**
-- You must have the `ngrok` CLI tool installed on your system. You can download it from the [ngrok website](https://ngrok.com/download).
+
+- You must have the `ngrok` CLI tool installed on your system. You can download it from
+  the [ngrok website](https://ngrok.com/download).
 - The `ngrok` command must be available in your system's PATH.
 
 1. Enable ngrok in the configuration file at `~/.smart-relay/config.json`:
@@ -57,10 +62,14 @@ authtoken by signing up at [ngrok.com](https://ngrok.com/).
 The server can also create a Cloudflare tunnel to expose your local server to the internet.
 
 **Prerequisites:**
-- You must have the `cloudflared` CLI tool installed on your system. You can download it from the [Cloudflare website](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
+
+- You must have the `cloudflared` CLI tool installed on your system. You can download it from
+  the [Cloudflare website](https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/).
 - The `cloudflared` command must be available in your system's PATH.
 
-**Note:** The server will automatically check if a tunnel named "smart-relay" exists. If it doesn't exist, it will create it (this is a one-time operation). If the tunnel already exists, it will skip the creation step and directly run the tunnel.
+**Note:** The server will automatically check if a tunnel named "smart-relay" exists. If it doesn't exist, it will
+create it (this is a one-time operation). If the tunnel already exists, it will skip the creation step and directly run
+the tunnel.
 
 1. Enable Cloudflare tunnel in the configuration file at `~/.smart-relay/config.json`:
    ```json
@@ -110,7 +119,8 @@ callback URL. This is useful for integrating with other systems that need to kno
    }
    ```
 
-4. The server will continue to send this request periodically (every 10 seconds by default) to ensure the tunnel is online.
+4. The server will continue to send this request periodically (every 10 seconds by default) to ensure the tunnel is
+   online.
    You can customize the interval by setting the `CALLBACK_INTERVAL` parameter (in milliseconds).
 
 Note: This feature is designed to notify an external service about the public tunnel URL and to keep the tunnel active
@@ -124,45 +134,3 @@ The server handles various error scenarios:
 |--------------------------------|------------|
 | Missing destination URL header | 001        |
 | Proxy request failures         | 002        |
-
-## Development
-
-### Project Structure
-
-The project has been modularized for better maintainability:
-
-- `index.js` - Main entry point that sets up and starts the server
-- `src/config.js` - Configuration settings for the server, including ngrok options
-- `src/utils.js` - Utility functions used across the application
-- `src/error-handlers.js` - Functions for handling error scenarios
-- `src/proxy.js` - Core proxy functionality for forwarding requests
-- `src/request-handlers.js` - Request handling and routing
-- `tests/` - Test files for the application
-
-The server now includes ngrok integration for exposing your local server to the internet, making it easier to test
-webhooks and share your proxy with others.
-
-### Testing
-
-Run the tests with:
-
-```bash
-npm test
-```
-
-### Publishing
-
-This package uses GitHub Actions for automated deployment to npm. When a new release is created on GitHub, the package
-will be automatically tested and published to npm.
-
-To create a new release:
-
-1. Update the version in package.json
-2. Create a new release on GitHub
-
-## Author
-
-Nur Zazin
-
-If you find this project helpful, you can support the author by making a donation:
-[Ko-fi](https://ko-fi.com/zazin)

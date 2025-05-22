@@ -4,7 +4,9 @@ A simple HTTP proxy server that forwards requests to a destination specified in 
 supports both HTTP and HTTPS protocols.
 
 If you find this project helpful, you can support the author by making a donation:
-[Ko-fi](https://ko-fi.com/zazin)
+
+- [PayPal](https://www.paypal.me/nurzazin/3)
+- [Ko-fi](https://ko-fi.com/zazin)
 
 ## Installation
 

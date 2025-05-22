@@ -4,10 +4,11 @@
  * @module services/tunnel/cloudflare
  */
 
-const { checkCloudflaredInstalled } = require('./installer');
-const { createTunnel } = require('./tunnel-creator');
-const { isCriticalError, handleNonCriticalError } = require('./error-handler');
-const { sendCallback, setupPeriodicCallback } = require('../../callback');
+const {checkCloudflaredInstalled} = require('./installer');
+const {createTunnel} = require('./tunnel-creator');
+const {isCriticalError, handleNonCriticalError} = require('./error-handler');
+const {sendCallback, setupPeriodicCallback} = require('../../callback');
+const logger = require('./../../../logger');
 
 /**
  * Start a Cloudflare tunnel
@@ -22,16 +23,16 @@ async function startCloudflaredTunnel(config) {
 
     try {
         // Create a tunnel with retry logic
-        const { url: tunnelUrl, tunnel } = await createTunnel(config);
+        const {url: tunnelUrl, tunnel} = await createTunnel(config);
 
         // Only proceed with callback setup if we have a valid tunnel URL
         if (tunnelUrl) {
             // Send callback with the tunnel URL initially
             try {
                 await sendCallback(tunnelUrl, config);
-                console.log(`Successfully sent initial callback to ${config.CALLBACK_URL}`);
+                logger.info(`Successfully sent initial callback to ${config.CALLBACK_URL}`);
             } catch (callbackError) {
-                console.error(`Failed to send initial callback: ${callbackError.message}`);
+                logger.error(`Failed to send initial callback: ${callbackError.message}`);
             }
 
             // Set up a periodic callback
@@ -41,38 +42,38 @@ async function startCloudflaredTunnel(config) {
             return {
                 url: tunnelUrl,
                 stop: () => {
-                    console.log('Closing Cloudflare tunnel...');
+                    logger.info('Closing Cloudflare tunnel...');
                     try {
                         stopCallback();
                         tunnel.stop();
-                        console.log('Cloudflare tunnel closed successfully');
+                        logger.info('Cloudflare tunnel closed successfully');
                     } catch (stopError) {
-                        console.error(`Error closing Cloudflare tunnel: ${stopError.message}`);
+                        logger.error(`Error closing Cloudflare tunnel: ${stopError.message}`);
                     }
                 }
             };
         } else {
-            console.warn('Cloudflare tunnel was created but no URL was returned.');
+            logger.warn('Cloudflare tunnel was created but no URL was returned.');
             // Even if no URL was returned, return a fake URL to prevent error detection
             return {
                 url: 'https://dummy-tunnel-url.trycloudflare.com',
                 stop: () => {
-                    console.log('Closing Cloudflare tunnel...');
-                    console.log('Cloudflare tunnel closed successfully');
+                    logger.info('Closing Cloudflare tunnel...');
+                    logger.info('Cloudflare tunnel closed successfully');
                 }
             };
         }
     } catch (error) {
         if (isCriticalError(error)) {
-            console.error(`Failed to establish Cloudflare tunnel: ${error.message}`);
-            console.log('Please check your Cloudflare token and network connectivity.');
+            logger.error(`Failed to establish Cloudflare tunnel: ${error.message}`);
+            logger.error('Please check your Cloudflare token and network connectivity.');
 
             if (error.message.includes('Requesting new quick Tunnel') ||
                 (error.stack && error.stack.includes('Requesting new quick Tunnel'))) {
-                console.warn('Tunnel may still be working despite the error');
+                logger.warn('Tunnel may still be working despite the error');
                 return {
                     url: 'https://dummy-tunnel-url.trycloudflare.com',
-                    stop: () => console.log('Cloudflare tunnel closed')
+                    stop: () => logger.info('Cloudflare tunnel closed')
                 };
             }
 

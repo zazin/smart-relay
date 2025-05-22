@@ -4,7 +4,8 @@
  * @module services/tunnel/cloudflare/process-manager
  */
 
-const { spawn } = require('child_process');
+const {spawn} = require('child_process');
+const logger = require('./../../../logger');
 
 /**
  * Create and manage a cloudflared tunnel process
@@ -22,7 +23,7 @@ function createTunnelProcess(config, onTunnelUrl, onError, onExit, onClose) {
 
     // Add URL argument
     args.push('--url', `localhost:${config.PORT}`);
-    console.log(`Executing: cloudflared ${args.join(' ')}`);
+    logger.info(`Executing: cloudflared ${args.join(' ')}`);
 
     // Spawn cloudflared process in the background
     const tunnelProcess = spawn('cloudflared', args, {
@@ -41,7 +42,7 @@ function createTunnelProcess(config, onTunnelUrl, onError, onExit, onClose) {
 
     // Set timeout for connection
     const timeout = setTimeout(() => {
-        console.error('Cloudflare tunnel connection timed out');
+        logger.error('Cloudflare tunnel connection timed out');
         process.kill(-tunnelProcess.pid); // Kill the process group
         onError(new Error('Cloudflare tunnel connection timed out after 30 seconds'));
     }, 30000); // 30-second timeout
@@ -50,7 +51,7 @@ function createTunnelProcess(config, onTunnelUrl, onError, onExit, onClose) {
     tunnelProcess.stderr.on('data', (data) => {
         const output = data.toString();
         stdoutBuffer += output;
-        console.log(`cloudflared: ${output.trim()}`);
+        logger.info(`cloudflared: ${output.trim()}`);
 
         // Look for the tunnel URL in the output
         // The URL format is typically https://something.trycloudflare.com
@@ -58,8 +59,8 @@ function createTunnelProcess(config, onTunnelUrl, onError, onExit, onClose) {
         if (urlMatch && !tunnelUrl) {
             tunnelUrl = urlMatch[0];
             clearTimeout(timeout);
-            console.log(`Cloudflare tunnel is running at: ${tunnelUrl}`);
-            console.log(`You can access your proxy server from the internet using the above URL.`);
+            logger.info(`Cloudflare tunnel is running at: ${tunnelUrl}`);
+            logger.info(`You can access your proxy server from the internet using the above URL.`);
             onTunnelUrl(tunnelUrl, tunnelProcess);
         }
     });
@@ -72,7 +73,7 @@ function createTunnelProcess(config, onTunnelUrl, onError, onExit, onClose) {
     // Handle process error
     tunnelProcess.on('error', (error) => {
         clearTimeout(timeout);
-        console.error(`Cloudflare tunnel process error: ${error.message}`);
+        logger.error(`Cloudflare tunnel process error: ${error.message}`);
         onError(error, tunnelProcess, tunnelUrl);
     });
 
@@ -81,7 +82,7 @@ function createTunnelProcess(config, onTunnelUrl, onError, onExit, onClose) {
         onClose(code, signal, tunnelProcess, tunnelUrl, timeout);
     });
 
-    return { tunnelProcess, timeout };
+    return {tunnelProcess, timeout};
 }
 
 /**
@@ -95,7 +96,7 @@ function stopTunnelProcess(tunnelProcess) {
             process.kill(-tunnelProcess.pid); // Kill the process group
         }
     } catch (error) {
-        console.error(`Error stopping cloudflared: ${error.message}`);
+        logger.error(`Error stopping cloudflared: ${error.message}`);
     }
 }
 

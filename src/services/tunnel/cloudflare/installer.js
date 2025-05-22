@@ -4,7 +4,8 @@
  * @module services/tunnel/cloudflare/installer
  */
 
-const { execSync } = require('child_process');
+const {execSync} = require('child_process');
+const logger = require('./../../../logger');
 
 /**
  * Check if cloudflared is installed
@@ -13,11 +14,11 @@ const { execSync } = require('child_process');
  */
 function checkCloudflaredInstalled() {
     try {
-        execSync('cloudflared --version', { stdio: 'ignore' });
+        execSync('cloudflared --version', {stdio: 'ignore'});
         return true;
     } catch (error) {
-        console.error('Error: cloudflared is not installed or not available in PATH.');
-        console.error('Please install cloudflared from https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/');
+        logger.error('Error: cloudflared is not installed or not available in PATH.');
+        logger.error('Please install cloudflared from https://developers.cloudflare.com/cloudflare-one/connections/connect-apps/install-and-setup/installation/');
         return false;
     }
 }

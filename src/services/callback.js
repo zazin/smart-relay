@@ -7,6 +7,7 @@
 const http = require('http');
 const https = require('https');
 const url = require('url');
+const logger = require("../logger");
 
 /**
  * Send the tunnel URL to the callback URL
@@ -54,17 +55,17 @@ async function sendCallback(tunnelUrl, config) {
                 });
                 res.on('end', () => {
                     if (res.statusCode >= 200 && res.statusCode < 300) {
-                        console.log(`Successfully sent tunnel URL to callback: ${config.CALLBACK_URL}`);
+                        logger.info(`Successfully sent tunnel URL to callback: ${config.CALLBACK_URL}`);
                         resolve();
                     } else {
-                        console.error(`Failed to send tunnel URL to callback. Status: ${res.statusCode}, Response: ${responseData}`);
+                        logger.error(`Failed to send tunnel URL to callback. Status: ${res.statusCode}, Response: ${responseData}`);
                         reject(new Error(`HTTP error: ${res.statusCode}`));
                     }
                 });
             });
 
             req.on('error', (error) => {
-                console.error(`Error sending tunnel URL to callback: ${error.message}`);
+                logger.error(`Error sending tunnel URL to callback: ${error.message}`);
                 reject(error);
             });
 
@@ -73,7 +74,7 @@ async function sendCallback(tunnelUrl, config) {
             req.end();
         });
     } catch (error) {
-        console.error(`Failed to send callback: ${error.message}`);
+        logger.error(`Failed to send callback: ${error.message}`);
     }
 }
 
@@ -86,13 +87,14 @@ async function sendCallback(tunnelUrl, config) {
  */
 function setupPeriodicCallback(tunnelUrl, config) {
     if (!config.CALLBACK_URL || config.CALLBACK_INTERVAL <= 0) {
-        return () => {}; // Return a no-op function if callbacks are not enabled
+        return () => {
+        }; // Return a no-op function if callbacks are not enabled
     }
 
-    console.log(`Setting up periodic callback every ${config.CALLBACK_INTERVAL / 1000} seconds`);
+    logger.info(`Setting up periodic callback every ${config.CALLBACK_INTERVAL / 1000} seconds`);
     const intervalId = setInterval(() => {
         sendCallback(tunnelUrl, config).catch(error => {
-            console.error(`Error in periodic callback: ${error.message}`);
+            logger.error(`Error in periodic callback: ${error.message}`);
         });
     }, config.CALLBACK_INTERVAL);
 

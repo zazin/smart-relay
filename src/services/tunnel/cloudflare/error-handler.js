@@ -3,6 +3,7 @@
  *
  * @module services/tunnel/cloudflare/error-handler
  */
+const logger = require('./../../../logger');
 
 /**
  * Check if an error is critical based on common error patterns
@@ -36,7 +37,7 @@ function isCriticalError(error) {
 
 /**
  * Check if an error message contains any critical process errors
- * 
+ *
  * @param {string} errorMessage - The error message to check
  * @returns {boolean} True if the message contains critical errors, false otherwise
  */
@@ -56,16 +57,16 @@ function containsProcessCriticalError(errorMessage) {
 }
 
 /**
- * Handle non-critical errors by returning a dummy tunnel object
- * 
+ * Handle non-critical errors by returning a fake tunnel object
+ *
  * @param {string} errorMessage - The error message
- * @returns {Object} A dummy tunnel object
+ * @returns {Object} A fake tunnel object
  */
 function handleNonCriticalError(errorMessage) {
-    console.warn(`Non-critical tunnel issue: ${errorMessage}`);
+    logger.warn(`Non-critical tunnel issue: ${errorMessage}`);
     return {
         url: 'https://dummy-tunnel-url.trycloudflare.com',
-        stop: () => console.log('Cloudflare tunnel closed')
+        stop: () => logger.info('Cloudflare tunnel closed')
     };
 }
 

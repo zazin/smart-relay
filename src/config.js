@@ -7,7 +7,8 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { runSetup, CONFIG_FILE } = require('./setup');
+const {runSetup, CONFIG_FILE} = require('./setup');
+const {error, info} = require("./logger");
 
 // Config file path
 const CONFIG_DIR = path.join(os.homedir(), '.smart-relay');
@@ -36,7 +37,7 @@ if (!fs.existsSync(CONFIG_DIR)) {
     try {
         fs.mkdirSync(CONFIG_DIR, {recursive: true});
     } catch (err) {
-        console.error(`Failed to create config directory: ${err.message}`);
+        error(`Failed to create config directory: ${err.message}`);
     }
 }
 
@@ -53,7 +54,7 @@ const defaultConfig = {
 };
 
 // Read or create a config file
-let configData = { ...defaultConfig };
+let configData = {...defaultConfig};
 
 // Check if this is the first run or config file doesn't exist
 const isFirstRun = !fs.existsSync(CONFIG_FILE);
@@ -63,20 +64,20 @@ async function loadConfig() {
     if (isFirstRun) {
         try {
             // Run interactive setup
-            console.log('No configuration found. Starting interactive setup...');
+            info('No configuration found. Starting interactive setup...');
             configData = await runSetup();
         } catch (err) {
-            console.error(`Failed to run setup: ${err.message}`);
+            error(`Failed to run setup: ${err.message}`);
             // Fall back to default config
             fs.writeFileSync(CONFIG_FILE, JSON.stringify(defaultConfig, null, 2));
-            console.log(`Created default config file at ${CONFIG_FILE}`);
+            info(`Created default config file at ${CONFIG_FILE}`);
         }
     } else {
         try {
             const fileContent = fs.readFileSync(CONFIG_FILE, 'utf8');
             configData = JSON.parse(fileContent);
         } catch (err) {
-            console.error(`Failed to read config file: ${err.message}`);
+            error(`Failed to read config file: ${err.message}`);
         }
     }
 }

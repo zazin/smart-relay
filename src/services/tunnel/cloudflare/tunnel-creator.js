@@ -4,9 +4,9 @@
  * @module services/tunnel/cloudflare/tunnel-creator
  */
 
-const { createTunnelProcess, stopTunnelProcess } = require('./process-manager');
-const { containsProcessCriticalError } = require('./error-handler');
-const { sendCallback, setupPeriodicCallback } = require('../../callback');
+const {createTunnelProcess, stopTunnelProcess} = require('./process-manager');
+const {containsProcessCriticalError} = require('./error-handler');
+const logger = require('./../../../logger');
 
 /**
  * Create and start a Cloudflare tunnel with retry logic
@@ -17,7 +17,7 @@ const { sendCallback, setupPeriodicCallback } = require('../../callback');
  * @returns {Promise<Object>} An object containing the tunnel URL and a stop function
  */
 async function createTunnel(config, retryCount = 0, maxRetries = 3) {
-    console.log(`Attempting to create Cloudflare tunnel (attempt ${retryCount + 1}/${maxRetries + 1})...`);
+    logger.info(`Attempting to create Cloudflare tunnel (attempt ${retryCount + 1}/${maxRetries + 1})...`);
 
     try {
         // Get the tunnel URL when it's available
@@ -39,7 +39,7 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
                     return;
                 }
 
-                console.warn('Resolving with a dummy URL to prevent error detection');
+                logger.error('Resolving with a dummy URL to prevent error detection');
                 tunnelUrl = 'https://dummy-tunnel-url.trycloudflare.com';
                 resolve({
                     url: tunnelUrl,
@@ -57,10 +57,10 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
                     const processRunTime = Date.now() - tunnelProcess.startTime;
                     if (code !== 0 && processRunTime < 10000) {
                         clearTimeout(timeout);
-                        console.error(`Cloudflare tunnel process exited with code ${code} and signal ${signal} before establishing a tunnel`);
+                        logger.error(`Cloudflare tunnel process exited with code ${code} and signal ${signal} before establishing a tunnel`);
 
                         // Instead of rejecting with an error, resolve with a dummy URL
-                        console.warn('Resolving with a dummy URL to prevent error detection');
+                        logger.error('Resolving with a dummy URL to prevent error detection');
                         tunnelUrl = 'https://dummy-tunnel-url.trycloudflare.com';
                         resolve({
                             url: tunnelUrl,
@@ -69,10 +69,10 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
                             }
                         });
                     } else {
-                        console.log(`Cloudflare tunnel process exited with code ${code} and signal ${signal}, but may still be running in the background`);
+                        logger.info(`Cloudflare tunnel process exited with code ${code} and signal ${signal}, but may still be running in the background`);
                     }
                 } else {
-                    console.log(`Cloudflare tunnel process exited with code ${code} and signal ${signal}`);
+                    logger.info(`Cloudflare tunnel process exited with code ${code} and signal ${signal}`);
                 }
             };
 
@@ -86,7 +86,7 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
 
                     if (code !== 0 && processRunTime < 10000) {
                         clearTimeout(timeout);
-                        console.error(`${logMessage} before establishing a tunnel`);
+                        logger.error(`${logMessage} before establishing a tunnel`);
 
                         // Always resolve with dummy URL on early closure
                         tunnelUrl = 'https://dummy-tunnel-url.trycloudflare.com';
@@ -97,10 +97,10 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
                             }
                         });
                     } else {
-                        console.log(`${logMessage}, but may still be running in the background`);
+                        logger.info(`${logMessage}, but may still be running in the background`);
                     }
                 } else {
-                    console.log(logMessage);
+                    logger.info(logMessage);
                 }
             };
 
@@ -110,7 +110,7 @@ async function createTunnel(config, retryCount = 0, maxRetries = 3) {
     } catch (error) {
         // If we haven't reached max retries, try again
         if (retryCount < maxRetries) {
-            console.log(`Retrying in 5 seconds... (${retryCount + 1}/${maxRetries})`);
+            logger.info(`Retrying in 5 seconds... (${retryCount + 1}/${maxRetries})`);
             await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds before retrying
             return createTunnel(config, retryCount + 1, maxRetries);
         }

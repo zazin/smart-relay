@@ -163,3 +163,6 @@ To create a new release:
 ## Author
 
 Nur Zazin
+
+If you find this project helpful, you can support the author by making a donation:
+[Ko-fi](https://ko-fi.com/zazin)

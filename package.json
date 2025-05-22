@@ -36,10 +36,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nurzazin/smart-relay.git"
+    "url": "git+https://github.com/zazin/smart-relay.git"
   },
   "bugs": {
-    "url": "https://github.com/nurzazin/smart-relay/issues"
+    "url": "https://github.com/zazin/smart-relay/issues"
   },
-  "homepage": "https://github.com/nurzazin/smart-relay#readme"
+  "homepage": "https://github.com/zazin/smart-relay#readme"
 }
